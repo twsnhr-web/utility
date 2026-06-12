@@ -211,19 +211,10 @@
 const MAPS = ["Mirage","Inferno","Nuke","Ancient","Anubis","Dust II","Train"];
 
 const CLIPS = {
-  "Mirage": {
-    t: [
-      { name:"A execute from ramp",        tag:"EXEC",  group:"A site", file:"a-execute-ramp.mp4" },
-      { name:"Jungle smoke from T spawn",  tag:"SMOKE", group:"A site", file:"jungle-smoke-tspawn.mp4" },
-      { name:"Window smoke from top mid",  tag:"SMOKE", group:"Mid",    file:"window-smoke-topmid.mp4" },
-    ],
-    ct: [
-      { name:"Top mid smoke from window",  tag:"SMOKE", group:"Mid",    file:"topmid-smoke-window.mp4" },
-    ],
-  },
+  "Mirage": { t: [], ct: [] },
   "Inferno": { t: [], ct: [
-  { name:"Retake nades CT", tag:"NADE", group:"Retakes", file:"retake-nades-ct.mp4" },
-] },
+    { name:"Retake nades CT", tag:"NADE", group:"Retakes", file:"retake-nades-ct.mp4" },
+  ] },
   "Nuke":    { t: [], ct: [] },
   "Ancient": { t: [], ct: [] },
   "Anubis":  { t: [], ct: [] },
@@ -303,6 +294,21 @@ function render(){
   }
 }
 
+function enterFullscreen(v){
+  try{
+    if (v.requestFullscreen){
+      v.requestFullscreen().then(()=>{
+        // try to rotate to landscape on Android; harmless if unsupported
+        screen.orientation?.lock?.("landscape").catch(()=>{});
+      }).catch(()=>{});
+    } else if (v.webkitEnterFullscreen){
+      // iPhone Safari: native fullscreen video player
+      if (v.readyState >= 1) v.webkitEnterFullscreen();
+      else v.addEventListener("loadedmetadata", ()=>{ try{ v.webkitEnterFullscreen(); }catch(_){} }, { once:true });
+    }
+  }catch(_){}
+}
+
 document.addEventListener("click", e=>{
   const mapBtn = e.target.closest(".map-row");
   if(mapBtn){ state.map = mapBtn.dataset.map; go("side"); return; }
@@ -311,7 +317,9 @@ document.addEventListener("click", e=>{
   const clipBtn = e.target.closest(".clip-row");
   if(clipBtn){
     state.clip = (CLIPS[state.map][state.side]).find(c=>c.file===clipBtn.dataset.file);
-    go("player"); return;
+    go("player");
+    enterFullscreen($("vid"));
+    return;
   }
 });
 
@@ -329,6 +337,12 @@ $("vid").addEventListener("error", ()=>{
   const err=$("vidError");
   err.innerHTML = `Video not found. Expected file at:<br><code>${videoPath(state.map,state.side,state.clip.file)}</code>`;
   err.style.display="block";
+});
+
+document.addEventListener("fullscreenchange", ()=>{
+  if(!document.fullscreenElement){
+    try{ screen.orientation?.unlock?.(); }catch(_){}
+  }
 });
 
 render();
