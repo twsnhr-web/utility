@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#10141b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Util Book</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#10141b;
+    --bg-raise:#171c26;
+    --bg-press:#1e2533;
+    --line:#262e3e;
+    --text:#e8ecf3;
+    --text-dim:#8b94a6;
+    --t-accent:#ddb243;   /* terrorist gold */
+    --ct-accent:#6e9ecf;  /* counter-terrorist blue */
+    --accent:#9aa4b5;     /* neutral until a side is picked */
+    --danger:#d4604f;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',system-ui,sans-serif;
+    overscroll-behavior-y:none;
+    padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+  }
+  body[data-side="t"]{--accent:var(--t-accent)}
+  body[data-side="ct"]{--accent:var(--ct-accent)}
+
+  #app{max-width:560px;margin:0 auto;min-height:100%;display:flex;flex-direction:column}
+
+  /* ---------- header ---------- */
+  header{
+    position:sticky;top:0;z-index:10;
+    display:flex;align-items:center;gap:10px;
+    padding:14px 16px 10px;
+    background:linear-gradient(var(--bg) 75%, transparent);
+  }
+  .back{
+    flex:none;width:38px;height:38px;border:1px solid var(--line);border-radius:11px;
+    background:var(--bg-raise);color:var(--text);font-size:18px;line-height:1;
+    display:none;align-items:center;justify-content:center;cursor:pointer;
+    transition:background .15s;
+  }
+  .back:active{background:var(--bg-press)}
+  body.can-go-back .back{display:flex}
+  .crumbs{min-width:0}
+  .crumbs .eyebrow{
+    font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--accent);
+  }
+  .crumbs h1{
+    font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:30px;
+    letter-spacing:.02em;text-transform:uppercase;line-height:1.05;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+
+  main{flex:1;padding:6px 16px 32px}
+
+  /* ---------- screens & transitions ---------- */
+  .screen{display:none;animation:slide .22s ease both}
+  .screen.active{display:block}
+  @keyframes slide{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){.screen{animation:none}}
+
+  /* ---------- map list ---------- */
+  .map-row{
+    width:100%;display:flex;align-items:center;gap:14px;
+    background:var(--bg-raise);border:1px solid var(--line);border-radius:var(--radius);
+    padding:16px;margin-bottom:10px;cursor:pointer;color:var(--text);
+    text-align:left;transition:background .15s,border-color .15s;
+  }
+  .map-row:active{background:var(--bg-press)}
+  .map-glyph{
+    flex:none;width:46px;height:46px;border-radius:10px;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:24px;
+    background:var(--bg-press);color:var(--text-dim);border:1px solid var(--line);
+  }
+  .map-name{
+    font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:23px;
+    letter-spacing:.04em;text-transform:uppercase;
+  }
+  .map-count{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-dim)}
+
+  /* ---------- side picker ---------- */
+  .sides{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px}
+  .side-card{
+    border-radius:var(--radius);border:1px solid var(--line);background:var(--bg-raise);
+    padding:30px 14px 24px;cursor:pointer;color:var(--text);text-align:center;
+    transition:transform .12s,border-color .15s;
+  }
+  .side-card:active{transform:scale(.97)}
+  .side-card .badge{
+    font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:46px;line-height:1;
+  }
+  .side-card.t .badge{color:var(--t-accent)}
+  .side-card.ct .badge{color:var(--ct-accent)}
+  .side-card .label{margin-top:8px;font-size:13px;color:var(--text-dim)}
+  .side-card.t:active{border-color:var(--t-accent)}
+  .side-card.ct:active{border-color:var(--ct-accent)}
+
+  /* ---------- clip list ---------- */
+  .group-label{
+    margin:20px 2px 8px;font-family:'JetBrains Mono',monospace;font-size:10px;
+    letter-spacing:.18em;text-transform:uppercase;color:var(--text-dim);
+  }
+  .clip-row{
+    width:100%;display:flex;align-items:center;gap:12px;
+    background:var(--bg-raise);border:1px solid var(--line);border-radius:var(--radius);
+    padding:14px;margin-bottom:8px;cursor:pointer;color:var(--text);text-align:left;
+    transition:background .15s;
+  }
+  .clip-row:active{background:var(--bg-press)}
+  .tag{
+    flex:none;font-family:'JetBrains Mono',monospace;font-size:9.5px;font-weight:500;
+    letter-spacing:.12em;padding:5px 8px;border-radius:6px;
+    border:1px solid var(--accent);color:var(--accent);min-width:58px;text-align:center;
+  }
+  .clip-name{font-size:15px;font-weight:500;line-height:1.3}
+  .chev{margin-left:auto;color:var(--text-dim);font-size:16px}
+  .empty{
+    margin-top:36px;text-align:center;color:var(--text-dim);font-size:14px;line-height:1.6;
+    padding:0 12px;
+  }
+  .empty code{
+    font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--accent);
+    background:var(--bg-raise);padding:2px 6px;border-radius:6px;
+  }
+
+  /* ---------- player ---------- */
+  .player-wrap{margin-top:6px}
+  video{
+    width:100%;border-radius:var(--radius);background:#000;
+    border:1px solid var(--line);display:block;aspect-ratio:16/9;
+  }
+  .player-meta{display:flex;align-items:center;gap:10px;margin-top:14px}
+  .player-meta .tag{min-width:58px}
+  .player-title{font-size:16px;font-weight:600}
+  .replay{
+    margin-top:18px;width:100%;padding:15px;border-radius:var(--radius);
+    border:1px solid var(--accent);background:transparent;color:var(--accent);
+    font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:19px;
+    letter-spacing:.08em;text-transform:uppercase;cursor:pointer;
+    transition:background .15s;
+  }
+  .replay:active{background:var(--bg-press)}
+  .vid-error{
+    margin-top:12px;border:1px solid var(--danger);border-radius:var(--radius);
+    padding:14px;color:var(--danger);font-size:13px;line-height:1.55;display:none;
+  }
+  .vid-error code{font-family:'JetBrains Mono',monospace;font-size:12px}
+
+  button:focus-visible,.map-row:focus-visible,.clip-row:focus-visible,.side-card:focus-visible{
+    outline:2px solid var(--accent);outline-offset:2px;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <button class="back" id="backBtn" aria-label="Back">&#8592;</button>
+    <div class="crumbs">
+      <div class="eyebrow" id="crumb">UTIL BOOK</div>
+      <h1 id="title">Maps</h1>
+    </div>
+  </header>
+  <main>
+    <section class="screen active" id="screen-maps"></section>
+    <section class="screen" id="screen-side">
+      <div class="sides">
+        <button class="side-card t" data-side="t"><div class="badge">T</div><div class="label">Terrorist</div></button>
+        <button class="side-card ct" data-side="ct"><div class="badge">CT</div><div class="label">Counter-Terrorist</div></button>
+      </div>
+    </section>
+    <section class="screen" id="screen-clips"></section>
+    <section class="screen" id="screen-player">
+      <div class="player-wrap">
+        <video id="vid" playsinline controls loop preload="metadata"></video>
+        <div class="vid-error" id="vidError"></div>
+        <div class="player-meta"><span class="tag" id="pTag"></span><span class="player-title" id="pTitle"></span></div>
+        <button class="replay" id="replayBtn">&#8635;&nbsp; Replay</button>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════════════
+   EDIT THIS SECTION ONLY — your maps and clips live here.
+
+   1. Trim your SteelSeries GG clip to ~10s and export as .mp4
+   2. Put the file in:  videos/<map>/<side>/your-file.mp4
+   3. Add one line below under the right map + side:
+        { name:"A execute from ramp", tag:"EXEC", group:"A site", file:"a-execute-ramp.mp4" }
+
+   tag   = small chip shown on the row (SMOKE, FLASH, MOLLY, HE, EXEC, NADE — anything)
+   group = optional heading the clip is sorted under (e.g. "A site", "Mid", "B site")
+   file  = filename inside videos/<map>/<side>/
+   ════════════════════════════════════════════════════════════════ */
+
+const MAPS = ["Mirage","Inferno","Nuke","Ancient","Anubis","Dust II","Train"];
+
+const CLIPS = {
+  "Mirage": {
+    t: [
+      { name:"A execute from ramp",        tag:"EXEC",  group:"A site", file:"a-execute-ramp.mp4" },
+      { name:"Jungle smoke from T spawn",  tag:"SMOKE", group:"A site", file:"jungle-smoke-tspawn.mp4" },
+      { name:"Window smoke from top mid",  tag:"SMOKE", group:"Mid",    file:"window-smoke-topmid.mp4" },
+    ],
+    ct: [
+      { name:"Top mid smoke from window",  tag:"SMOKE", group:"Mid",    file:"topmid-smoke-window.mp4" },
+    ],
+  },
+  "Inferno": { t: [], ct: [] },
+  "Nuke":    { t: [], ct: [] },
+  "Ancient": { t: [], ct: [] },
+  "Anubis":  { t: [], ct: [] },
+  "Dust II": { t: [], ct: [] },
+  "Train":   { t: [], ct: [] },
+};
+
+/* ════════════ end of editable section ════════════ */
+
+const $ = id => document.getElementById(id);
+const screens = ["maps","side","clips","player"];
+const state = { screen:"maps", map:null, side:null, clip:null };
+
+const slug = s => s.toLowerCase().replace(/\s+/g,"");
+const videoPath = (map, side, file) => `videos/${slug(map)}/${side}/${file}`;
+const sideName = s => s === "t" ? "Terrorist" : "Counter-Terrorist";
+
+function go(screen){
+  state.screen = screen;
+  screens.forEach(s => $("screen-"+s).classList.toggle("active", s===screen));
+  document.body.classList.toggle("can-go-back", screen !== "maps");
+  document.body.dataset.side = (screen==="maps"||screen==="side") ? "" : state.side;
+  render();
+  window.scrollTo(0,0);
+}
+
+function render(){
+  if(state.screen==="maps"){
+    $("crumb").textContent = "UTIL BOOK";
+    $("title").textContent = "Maps";
+    $("screen-maps").innerHTML = MAPS.map(m=>{
+      const c = CLIPS[m] || {t:[],ct:[]};
+      const n = (c.t?.length||0)+(c.ct?.length||0);
+      return `<button class="map-row" data-map="${m}">
+        <span class="map-glyph">${m[0]}</span>
+        <span class="map-name">${m}</span>
+        <span class="map-count">${n} clip${n===1?"":"s"}</span>
+      </button>`;
+    }).join("");
+  }
+  if(state.screen==="side"){
+    $("crumb").textContent = "PICK A SIDE";
+    $("title").textContent = state.map;
+  }
+  if(state.screen==="clips"){
+    $("crumb").textContent = state.map.toUpperCase();
+    $("title").textContent = sideName(state.side);
+    const list = (CLIPS[state.map]?.[state.side]) || [];
+    if(!list.length){
+      $("screen-clips").innerHTML = `<div class="empty">No clips here yet.<br><br>
+        Drop a trimmed clip into<br><code>videos/${slug(state.map)}/${state.side}/</code><br>
+        and add it to the CLIPS list at the top of this file.</div>`;
+    } else {
+      const groups = [...new Set(list.map(c=>c.group||"Clips"))];
+      $("screen-clips").innerHTML = groups.map(g=>{
+        const rows = list.filter(c=>(c.group||"Clips")===g).map(c=>`
+          <button class="clip-row" data-file="${c.file}">
+            <span class="tag">${c.tag||"UTIL"}</span>
+            <span class="clip-name">${c.name}</span>
+            <span class="chev">&#8250;</span>
+          </button>`).join("");
+        return `<div class="group-label">${g}</div>${rows}`;
+      }).join("");
+    }
+  }
+  if(state.screen==="player" && state.clip){
+    $("crumb").textContent = `${state.map.toUpperCase()} &middot; ${state.side.toUpperCase()}`.replace("&middot;","·");
+    $("title").textContent = state.clip.name;
+    $("pTag").textContent = state.clip.tag || "UTIL";
+    $("pTitle").textContent = state.clip.name;
+    const v = $("vid");
+    $("vidError").style.display = "none";
+    v.src = videoPath(state.map, state.side, state.clip.file);
+    v.play().catch(()=>{ /* autoplay may be blocked until user taps — fine */ });
+  } else {
+    const v = $("vid"); v.pause(); v.removeAttribute("src"); v.load();
+  }
+}
+
+document.addEventListener("click", e=>{
+  const mapBtn = e.target.closest(".map-row");
+  if(mapBtn){ state.map = mapBtn.dataset.map; go("side"); return; }
+  const sideBtn = e.target.closest(".side-card");
+  if(sideBtn){ state.side = sideBtn.dataset.side; go("clips"); return; }
+  const clipBtn = e.target.closest(".clip-row");
+  if(clipBtn){
+    state.clip = (CLIPS[state.map][state.side]).find(c=>c.file===clipBtn.dataset.file);
+    go("player"); return;
+  }
+});
+
+$("backBtn").addEventListener("click", ()=>{
+  const order = {player:"clips", clips:"side", side:"maps"};
+  if(order[state.screen]) go(order[state.screen]);
+});
+
+$("replayBtn").addEventListener("click", ()=>{
+  const v=$("vid"); v.currentTime=0; v.play();
+});
+
+$("vid").addEventListener("error", ()=>{
+  if(!state.clip) return;
+  const err=$("vidError");
+  err.innerHTML = `Video not found. Expected file at:<br><code>${videoPath(state.map,state.side,state.clip.file)}</code>`;
+  err.style.display="block";
+});
+
+render();
+</script>
+</body>
+</html>
