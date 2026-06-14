@@ -74,23 +74,43 @@
 
   /* ---------- map list ---------- */
   .map-row{
+    position:relative;overflow:hidden;
     width:100%;display:flex;align-items:center;gap:14px;
     background:var(--bg-raise);border:1px solid var(--line);border-radius:var(--radius);
-    padding:16px;margin-bottom:10px;cursor:pointer;color:var(--text);
-    text-align:left;transition:background .15s,border-color .15s;
+    padding:22px 18px;margin-bottom:10px;cursor:pointer;color:var(--text);
+    text-align:left;transition:background .15s,border-color .15s,transform .12s;
+    min-height:84px;
   }
-  .map-row:active{background:var(--bg-press)}
+  .map-row .cover{
+    position:absolute;inset:0;z-index:0;
+    background-size:cover;background-position:center;
+    opacity:0;transition:opacity .3s;
+  }
+  .map-row.has-cover .cover{opacity:1}
+  /* dark gradient so white text stays readable over any image */
+  .map-row.has-cover::after{
+    content:"";position:absolute;inset:0;z-index:1;
+    background:linear-gradient(90deg, rgba(16,20,27,.92) 0%, rgba(16,20,27,.72) 45%, rgba(16,20,27,.45) 100%);
+  }
+  .map-row > *{position:relative;z-index:2}
+  .map-row:active{transform:scale(.99)}
   .map-glyph{
     flex:none;width:46px;height:46px;border-radius:10px;
     display:flex;align-items:center;justify-content:center;
     font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:24px;
-    background:var(--bg-press);color:var(--text-dim);border:1px solid var(--line);
+    background:rgba(30,37,51,.7);color:var(--text);border:1px solid var(--line);
+    backdrop-filter:blur(2px);
   }
+  .map-row.has-cover .map-glyph{display:none}
   .map-name{
-    font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:23px;
+    font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:25px;
     letter-spacing:.04em;text-transform:uppercase;
+    text-shadow:0 1px 8px rgba(0,0,0,.6);
   }
-  .map-count{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-dim)}
+  .map-count{
+    margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-dim);
+    text-shadow:0 1px 6px rgba(0,0,0,.7);
+  }
 
   /* ---------- side picker ---------- */
   .sides{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px}
@@ -208,7 +228,7 @@
    file  = filename inside videos/<map>/<side>/
    ════════════════════════════════════════════════════════════════ */
 
-const MAPS = ["Mirage","Inferno","Nuke","Ancient","Anubis","Dust II","Train"];
+const MAPS = ["Mirage","Inferno","Nuke","Ancient","Anubis","Dust II","Overpass"];
 
 const CLIPS = {
   "Mirage": { t: [], ct: [] },
@@ -246,7 +266,20 @@ const CLIPS = {
   "Ancient": { t: [], ct: [] },
   "Anubis":  { t: [], ct: [] },
   "Dust II": { t: [], ct: [] },
-  "Train":   { t: [], ct: [] },
+  "Overpass": { t: [], ct: [] },
+};
+
+/* Cover images for the map list. Path is relative to the repo root.
+   GitHub URLs are case-sensitive, so this must match your real folder + file
+   names EXACTLY (capitals included). Leave a map out and it shows the plain row. */
+const COVERS = {
+  "Mirage":   "videos/Mirage/cover.webp",
+  "Inferno":  "videos/inferno/cover.webp",
+  "Nuke":     "videos/Nuke/cover.jpeg",
+  "Ancient":  "videos/Ancient/cover.jpg",
+  "Anubis":   "videos/Anubis/cover.webp",
+  "Dust II":  "videos/Dust II/cover.jpg",
+  "Overpass": "videos/Overpass/cover.webp",
 };
 
 /* ════════════ end of editable section ════════════ */
@@ -276,11 +309,24 @@ function render(){
       const c = CLIPS[m] || {t:[],ct:[]};
       const n = (c.t?.length||0)+(c.ct?.length||0);
       return `<button class="map-row" data-map="${m}">
+        <span class="cover"></span>
         <span class="map-glyph">${m[0]}</span>
         <span class="map-name">${m}</span>
         <span class="map-count">${n} clip${n===1?"":"s"}</span>
       </button>`;
     }).join("");
+    // load each map's cover from the COVERS map; apply only if it actually loads
+    document.querySelectorAll("#screen-maps .map-row").forEach(row=>{
+      const map = row.dataset.map;
+      const url = COVERS[map];
+      if(!url) return;
+      const img = new Image();
+      img.onload = ()=>{
+        row.querySelector(".cover").style.backgroundImage = `url("${encodeURI(url)}")`;
+        row.classList.add("has-cover");
+      };
+      img.src = encodeURI(url);
+    });
   }
   if(state.screen==="side"){
     $("crumb").textContent = "PICK A SIDE";
