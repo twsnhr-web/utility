@@ -129,6 +129,28 @@
   .side-card.t:active{border-color:var(--t-accent)}
   .side-card.ct:active{border-color:var(--ct-accent)}
 
+  /* ---------- search ---------- */
+  .search-wrap{
+    position:relative;display:flex;align-items:center;margin:2px 0 16px;
+  }
+  .search-icon{
+    position:absolute;left:14px;color:var(--text-dim);font-size:15px;pointer-events:none;
+  }
+  .search-input{
+    width:100%;padding:14px 40px 14px 40px;
+    background:var(--bg-raise);border:1px solid var(--line);border-radius:var(--radius);
+    color:var(--text);font-family:'Inter',sans-serif;font-size:15px;outline:none;
+    transition:border-color .15s;
+  }
+  .search-input::placeholder{color:var(--text-dim)}
+  .search-input:focus{border-color:var(--accent)}
+  .search-clear{
+    position:absolute;right:8px;width:30px;height:30px;display:none;
+    align-items:center;justify-content:center;border:0;border-radius:8px;
+    background:var(--bg-press);color:var(--text-dim);font-size:18px;cursor:pointer;
+  }
+  .search-clear:active{background:var(--line)}
+
   /* ---------- clip list (collapsible groups) ---------- */
   .group{
     border:1px solid var(--line);border-radius:var(--radius);
@@ -346,7 +368,7 @@ const COVERS = {
 
 const $ = id => document.getElementById(id);
 const screens = ["maps","side","clips","player"];
-const state = { screen:"maps", map:null, side:null, clip:null };
+const state = { screen:"maps", map:null, side:null, clip:null, query:"" };
 
 const slug = s => s.toLowerCase().replace(/\s+/g,"");
 const videoPath = (map, side, file) => `videos/${slug(map)}/${side}/${file}`;
@@ -359,6 +381,42 @@ function go(screen){
   document.body.dataset.side = (screen==="maps"||screen==="side") ? "" : state.side;
   render();
   window.scrollTo(0,0);
+}
+
+function renderClipList(list, query){
+  const q = (query||"").trim().toLowerCase();
+  const match = c => !q
+    || (c.name||"").toLowerCase().includes(q)
+    || (c.group||"").toLowerCase().includes(q)
+    || (c.tag||"").toLowerCase().includes(q);
+  const filtered = list.filter(match);
+  const target = $("clipResults");
+  if(!target) return;
+
+  if(!filtered.length){
+    target.innerHTML = `<div class="empty">No clips match “${query}”.</div>`;
+    return;
+  }
+  const groups = [...new Set(filtered.map(c=>c.group||"Clips"))];
+  target.innerHTML = groups.map((g,i)=>{
+    const items = filtered.filter(c=>(c.group||"Clips")===g);
+    const rows = items.map(c=>`
+      <button class="clip-row" data-file="${c.file}">
+        <span class="tag">${c.tag||"UTIL"}</span>
+        <span class="clip-name">${c.name}</span>
+        <span class="chev">&#8250;</span>
+      </button>`).join("");
+    // when searching, open matching groups automatically
+    const openClass = q ? " open" : "";
+    return `<div class="group${openClass}" data-group="${i}">
+      <button class="group-head" data-group="${i}">
+        <span class="group-title">${g}</span>
+        <span class="group-meta">${items.length}</span>
+        <span class="group-arrow">&#9656;</span>
+      </button>
+      <div class="group-body"><div>${rows}</div></div>
+    </div>`;
+  }).join("");
 }
 
 function render(){
@@ -401,24 +459,25 @@ function render(){
         Drop a trimmed clip into<br><code>videos/${slug(state.map)}/${state.side}/</code><br>
         and add it to the CLIPS list at the top of this file.</div>`;
     } else {
-      const groups = [...new Set(list.map(c=>c.group||"Clips"))];
-      $("screen-clips").innerHTML = groups.map((g,i)=>{
-        const items = list.filter(c=>(c.group||"Clips")===g);
-        const rows = items.map(c=>`
-          <button class="clip-row" data-file="${c.file}">
-            <span class="tag">${c.tag||"UTIL"}</span>
-            <span class="clip-name">${c.name}</span>
-            <span class="chev">&#8250;</span>
-          </button>`).join("");
-        return `<div class="group" data-group="${i}">
-          <button class="group-head" data-group="${i}">
-            <span class="group-title">${g}</span>
-            <span class="group-meta">${items.length}</span>
-            <span class="group-arrow">&#9656;</span>
-          </button>
-          <div class="group-body"><div>${rows}</div></div>
-        </div>`;
-      }).join("");
+      $("screen-clips").innerHTML = `
+        <div class="search-wrap">
+          <span class="search-icon">&#9906;</span>
+          <input type="text" id="clipSearch" class="search-input" placeholder="Search clips…"
+                 autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+          <button class="search-clear" id="searchClear" aria-label="Clear">&times;</button>
+        </div>
+        <div id="clipResults"></div>`;
+      renderClipList(list, "");
+      const input = $("clipSearch");
+      input.addEventListener("input", ()=>{
+        state.query = input.value;
+        $("searchClear").style.display = input.value ? "flex" : "none";
+        renderClipList(list, input.value);
+      });
+      $("searchClear").addEventListener("click", ()=>{
+        input.value=""; state.query=""; $("searchClear").style.display="none";
+        renderClipList(list, ""); input.focus();
+      });
     }
   }
   if(state.screen==="player" && state.clip){
