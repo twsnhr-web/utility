@@ -129,18 +129,45 @@
   .side-card.t:active{border-color:var(--t-accent)}
   .side-card.ct:active{border-color:var(--ct-accent)}
 
-  /* ---------- clip list ---------- */
-  .group-label{
-    margin:20px 2px 8px;font-family:'JetBrains Mono',monospace;font-size:10px;
-    letter-spacing:.18em;text-transform:uppercase;color:var(--text-dim);
+  /* ---------- clip list (collapsible groups) ---------- */
+  .group{
+    border:1px solid var(--line);border-radius:var(--radius);
+    background:var(--bg-raise);margin-bottom:10px;overflow:hidden;
   }
-  .clip-row{
+  .group-head{
     width:100%;display:flex;align-items:center;gap:12px;
-    background:var(--bg-raise);border:1px solid var(--line);border-radius:var(--radius);
-    padding:14px;margin-bottom:8px;cursor:pointer;color:var(--text);text-align:left;
-    transition:background .15s;
+    padding:16px;background:transparent;border:0;color:var(--text);cursor:pointer;
+    text-align:left;transition:background .15s;
   }
-  .clip-row:active{background:var(--bg-press)}
+  .group-head:active{background:var(--bg-press)}
+  .group-title{
+    font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:19px;
+    letter-spacing:.05em;text-transform:uppercase;
+  }
+  .group-meta{
+    margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:11px;
+    color:var(--text-dim);background:var(--bg-press);border:1px solid var(--line);
+    border-radius:20px;padding:2px 9px;
+  }
+  .group-arrow{
+    flex:none;color:var(--accent);font-size:13px;transition:transform .2s;
+    transform:rotate(0deg);
+  }
+  .group.open .group-arrow{transform:rotate(90deg)}
+  .group-body{
+    display:grid;grid-template-rows:0fr;transition:grid-template-rows .22s ease;
+  }
+  .group.open .group-body{grid-template-rows:1fr}
+  .group-body > *{overflow:hidden;min-height:0}
+  @media (prefers-reduced-motion:reduce){.group-body{transition:none}}
+  .clip-row{
+    display:flex;align-items:center;gap:12px;
+    background:var(--bg-press);border:1px solid var(--line);border-radius:11px;
+    padding:13px;margin:0 10px 8px;cursor:pointer;color:var(--text);text-align:left;
+    transition:filter .15s;
+  }
+  .clip-row:first-child{margin-top:2px}
+  .clip-row:active{filter:brightness(1.25)}
   .tag{
     flex:none;font-family:'JetBrains Mono',monospace;font-size:9.5px;font-weight:500;
     letter-spacing:.12em;padding:5px 8px;border-radius:6px;
@@ -375,14 +402,22 @@ function render(){
         and add it to the CLIPS list at the top of this file.</div>`;
     } else {
       const groups = [...new Set(list.map(c=>c.group||"Clips"))];
-      $("screen-clips").innerHTML = groups.map(g=>{
-        const rows = list.filter(c=>(c.group||"Clips")===g).map(c=>`
+      $("screen-clips").innerHTML = groups.map((g,i)=>{
+        const items = list.filter(c=>(c.group||"Clips")===g);
+        const rows = items.map(c=>`
           <button class="clip-row" data-file="${c.file}">
             <span class="tag">${c.tag||"UTIL"}</span>
             <span class="clip-name">${c.name}</span>
             <span class="chev">&#8250;</span>
           </button>`).join("");
-        return `<div class="group-label">${g}</div>${rows}`;
+        return `<div class="group" data-group="${i}">
+          <button class="group-head" data-group="${i}">
+            <span class="group-title">${g}</span>
+            <span class="group-meta">${items.length}</span>
+            <span class="group-arrow">&#9656;</span>
+          </button>
+          <div class="group-body"><div>${rows}</div></div>
+        </div>`;
       }).join("");
     }
   }
@@ -420,6 +455,8 @@ document.addEventListener("click", e=>{
   if(mapBtn){ state.map = mapBtn.dataset.map; go("side"); return; }
   const sideBtn = e.target.closest(".side-card");
   if(sideBtn){ state.side = sideBtn.dataset.side; go("clips"); return; }
+  const groupHead = e.target.closest(".group-head");
+  if(groupHead){ groupHead.closest(".group").classList.toggle("open"); return; }
   const clipBtn = e.target.closest(".clip-row");
   if(clipBtn){
     state.clip = (CLIPS[state.map][state.side]).find(c=>c.file===clipBtn.dataset.file);
