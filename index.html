@@ -231,7 +231,40 @@
 const MAPS = ["Mirage","Inferno","Nuke","Ancient","Anubis","Dust II","Overpass"];
 
 const CLIPS = {
-  "Mirage": { t: [], ct: [] },
+  "Mirage": {
+    t: [
+      { name:"Balcony molotov",            tag:"MOLLY", group:"A apps",    file:"a-apps/balcony-molotov.mp4" },
+      { name:"Pop flash",                  tag:"FLASH", group:"A apps",    file:"a-apps/pop-flash.mp4" },
+      { name:"B smoke execute",            tag:"SMOKE", group:"B apps",    file:"b-apps/b-smoke-execute.mp4" },
+      { name:"Market window smoke",        tag:"SMOKE", group:"B site",    file:"b-site/market-window-smoke.mp4" },
+      { name:"Window pop flash",           tag:"FLASH", group:"Mid",       file:"mid/window-pop-flash.mp4" },
+      { name:"Flash combo",                tag:"FLASH", group:"Ramp",      file:"ramp/flash-combo.mp4" },
+      { name:"Stair smoke",                tag:"SMOKE", group:"Ramp",      file:"ramp/stair-smoke.mp4" },
+      { name:"B rush smoke combo",         tag:"SMOKE", group:"Spawn",     file:"spawn/b-rush-smoke-combo.mp4" },
+      { name:"Connector smoke 1",          tag:"SMOKE", group:"Spawn",     file:"spawn/connector-smoke-1.mp4" },
+      { name:"Connector smoke 2",          tag:"SMOKE", group:"Spawn",     file:"spawn/connector-smoke-2.mp4" },
+      { name:"Fast start jungle smokes",   tag:"SMOKE", group:"Spawn",     file:"spawn/fast-start-jungle-smokes.mp4" },
+      { name:"Instant window spawn 1",     tag:"SMOKE", group:"Spawn",     file:"spawn/instant-window-spawn-1.mp4" },
+      { name:"Instant window spawn 2",     tag:"SMOKE", group:"Spawn",     file:"spawn/instant-window-spawn-2.mp4" },
+      { name:"Instant window spawn 3",     tag:"SMOKE", group:"Spawn",     file:"spawn/instant-window-spawn-3.mp4" },
+      { name:"Instant window spawn 4",     tag:"SMOKE", group:"Spawn",     file:"spawn/instant-window-spawn-4.mp4" },
+      { name:"Instant window spawn 5",     tag:"SMOKE", group:"Spawn",     file:"spawn/instant-window-spawn-5.mp4" },
+      { name:"Short smoke",                tag:"SMOKE", group:"Spawn",     file:"spawn/short-smoke.mp4" },
+      { name:"Top mid smoke",              tag:"SMOKE", group:"Spawn",     file:"spawn/top-mid-smoke.mp4" },
+      { name:"Short smoke",                tag:"SMOKE", group:"Top mid",   file:"top-mid/short-smoke.mp4" },
+      { name:"Top con smoke",              tag:"SMOKE", group:"Top mid",   file:"top-mid/top-con-smoke.mp4" },
+      { name:"Under molotov",              tag:"MOLLY", group:"Top mid",   file:"top-mid/under-molotov.mp4" },
+      { name:"Window molotov",             tag:"MOLLY", group:"Top mid",   file:"top-mid/window-molotov.mp4" },
+      { name:"Underpass pop flash",        tag:"FLASH", group:"Underpass", file:"underpass/underpass-pop-flash.mp4" },
+    ],
+    ct: [
+      { name:"Ramp molotov",               tag:"MOLLY", group:"A site",              file:"a-site/ramp-molotov.mp4" },
+      { name:"Underpass pop flash",        tag:"FLASH", group:"A site \u00b7 Connector", file:"a-site/connector/underpass-pop-flash.mp4" },
+      { name:"Top mid molotov",            tag:"MOLLY", group:"Window",              file:"window/top-mid-molotov.mp4" },
+      { name:"Window nade brake",          tag:"NADE",  group:"Window",              file:"window/window-nade-brake.mp4" },
+      { name:"Window pop flash",           tag:"FLASH", group:"Window",              file:"window/window-pop-flash.mp4" },
+    ],
+  },
   "Inferno": {
     t: [
       { name:"Apps lurk smoke",       tag:"SMOKE", group:"Apps",       file:"Apps/apps-lurk-smoke.mp4" },
