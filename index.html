@@ -345,7 +345,40 @@ const CLIPS = {
     ],
   },
   "Nuke":    { t: [], ct: [] },
-  "Ancient": { t: [], ct: [] },
+  "Ancient": {
+    t: [
+      { name:"1 way entry flash",          tag:"FLASH", group:"A main",    file:"a-main/1-way-entry-flash.mp4" },
+      { name:"A site smokes",              tag:"SMOKE", group:"A main",    file:"a-main/a-site-smokes.mp4" },
+      { name:"Back site molotov",          tag:"MOLLY", group:"A main",    file:"a-main/back-site-molotov.mp4" },
+      { name:"Anti push molotov",          tag:"MOLLY", group:"Elbow",     file:"elbow/anti-push-molotov.mp4" },
+      { name:"Donut smoke",                tag:"SMOKE", group:"Elbow",     file:"elbow/donut-smoke.mp4" },
+      { name:"Entry nade",                 tag:"NADE",  group:"Elbow",     file:"elbow/entry-nade.mp4" },
+      { name:"Heaven molotov 1",           tag:"MOLLY", group:"Elbow",     file:"elbow/heaven-molotov-1.mp4" },
+      { name:"Heaven molotov 2",           tag:"MOLLY", group:"Elbow",     file:"elbow/heaven-molotov-2.mp4" },
+      { name:"Jungle molotov",             tag:"MOLLY", group:"Elbow",     file:"elbow/jungle-molotov.mp4" },
+      { name:"Red room smoke",             tag:"SMOKE", group:"Elbow",     file:"elbow/red-room-smoke.mp4" },
+      { name:"Solo mid entry flashes",     tag:"FLASH", group:"Elbow",     file:"elbow/solo-mid-entry-flashes.mp4" },
+      { name:"Red room smoke",             tag:"SMOKE", group:"Heaven",    file:"heaven/red-room-smoke.mp4" },
+      { name:"Cave control combo 1",       tag:"SMOKE", group:"Lane",      file:"lane/cave-control-combo-1.mp4" },
+      { name:"Cave control combo 2",       tag:"SMOKE", group:"Lane",      file:"lane/cave-control-combo-2.mp4" },
+      { name:"Cave molotov",               tag:"MOLLY", group:"Lane",      file:"lane/cave-molotov.mp4" },
+      { name:"Cave pop flash",             tag:"FLASH", group:"Lane",      file:"lane/cave-pop-flash.mp4" },
+      { name:"B site god flash",           tag:"FLASH", group:"Ramp door", file:"ramp-door/b-site-god-flash.mp4" },
+      { name:"B site smokes",              tag:"SMOKE", group:"Ramp door", file:"ramp-door/b-site-smokes.mp4" },
+      { name:"Brollan cave molly",         tag:"MOLLY", group:"Ramp door", file:"ramp-door/brollan-cave-molly.mp4" },
+      { name:"Ninja site molotov",         tag:"MOLLY", group:"Ramp door", file:"ramp-door/ninja+site-molotov.mp4" },
+      { name:"Device mid lurk smoke",      tag:"SMOKE", group:"Spawn",     file:"spawn/device-mid-lurk-smoke.mp4" },
+      { name:"Donut smoke",                tag:"SMOKE", group:"Spawn",     file:"spawn/donut-smoke.mp4" },
+      { name:"Heaven smoke spawn 1",       tag:"SMOKE", group:"Spawn",     file:"spawn/heaven-smoke-spawn-1.mp4" },
+      { name:"Heaven smoke spawn 2",       tag:"SMOKE", group:"Spawn",     file:"spawn/heaven-smoke-spawn-2.mp4" },
+      { name:"Hooxi A rush donut smoke",   tag:"SMOKE", group:"Spawn",     file:"spawn/hooxi-a-rush-donut-smoke.mp4" },
+      { name:"Instant redroom smoke 1",    tag:"SMOKE", group:"Spawn",     file:"spawn/instant-redroom-smoke-spawn-1.mp4" },
+      { name:"Instant redroom smoke 2",    tag:"SMOKE", group:"Spawn",     file:"spawn/instant-redroom-smoke-spawn-2.mp4" },
+      { name:"Instant redroom smoke 3",    tag:"SMOKE", group:"Spawn",     file:"spawn/instant-redroom-smoke-spawn-3.mp4" },
+      { name:"Mid pop flash",              tag:"FLASH", group:"Spawn",     file:"spawn/mid-pop-flash.mp4" },
+    ],
+    ct: [],
+  },
   "Anubis":  { t: [], ct: [] },
   "Dust II": { t: [], ct: [] },
   "Overpass": { t: [], ct: [] },
@@ -371,7 +404,8 @@ const screens = ["maps","side","clips","player"];
 const state = { screen:"maps", map:null, side:null, clip:null, query:"" };
 
 const slug = s => s.toLowerCase().replace(/\s+/g,"");
-const videoPath = (map, side, file) => `videos/${slug(map)}/${side}/${file}`;
+const videoPath = (map, side, file) =>
+  `videos/${slug(map)}/${side}/` + file.split("/").map(encodeURIComponent).join("/");
 const sideName = s => s === "t" ? "Terrorist" : "Counter-Terrorist";
 
 function go(screen){
