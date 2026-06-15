@@ -18,9 +18,9 @@
     --line:#262e3e;
     --text:#e8ecf3;
     --text-dim:#8b94a6;
-    --t-accent:#ddb243;   /* terrorist gold */
-    --ct-accent:#6e9ecf;  /* counter-terrorist blue */
-    --accent:#9aa4b5;     /* neutral until a side is picked */
+    --t-accent:#ddb243;
+    --ct-accent:#6e9ecf;
+    --accent:#9aa4b5;
     --danger:#d4604f;
     --radius:14px;
   }
@@ -87,7 +87,6 @@
     opacity:0;transition:opacity .3s;
   }
   .map-row.has-cover .cover{opacity:1}
-  /* dark gradient so white text stays readable over any image */
   .map-row.has-cover::after{
     content:"";position:absolute;inset:0;z-index:1;
     background:linear-gradient(90deg, rgba(16,20,27,.92) 0%, rgba(16,20,27,.72) 45%, rgba(16,20,27,.45) 100%);
@@ -130,12 +129,8 @@
   .side-card.ct:active{border-color:var(--ct-accent)}
 
   /* ---------- search ---------- */
-  .search-wrap{
-    position:relative;display:flex;align-items:center;margin:2px 0 16px;
-  }
-  .search-icon{
-    position:absolute;left:14px;color:var(--text-dim);font-size:15px;pointer-events:none;
-  }
+  .search-wrap{position:relative;display:flex;align-items:center;margin:2px 0 16px}
+  .search-icon{position:absolute;left:14px;color:var(--text-dim);font-size:15px;pointer-events:none}
   .search-input{
     width:100%;padding:14px 40px 14px 40px;
     background:var(--bg-raise);border:1px solid var(--line);border-radius:var(--radius);
@@ -171,14 +166,9 @@
     color:var(--text-dim);background:var(--bg-press);border:1px solid var(--line);
     border-radius:20px;padding:2px 9px;
   }
-  .group-arrow{
-    flex:none;color:var(--accent);font-size:13px;transition:transform .2s;
-    transform:rotate(0deg);
-  }
+  .group-arrow{flex:none;color:var(--accent);font-size:13px;transition:transform .2s;transform:rotate(0deg)}
   .group.open .group-arrow{transform:rotate(90deg)}
-  .group-body{
-    display:grid;grid-template-rows:0fr;transition:grid-template-rows .22s ease;
-  }
+  .group-body{display:grid;grid-template-rows:0fr;transition:grid-template-rows .22s ease}
   .group.open .group-body{grid-template-rows:1fr}
   .group-body > *{overflow:hidden;min-height:0}
   @media (prefers-reduced-motion:reduce){.group-body{transition:none}}
@@ -198,36 +188,180 @@
   .clip-name{font-size:15px;font-weight:500;line-height:1.3}
   .chev{margin-left:auto;color:var(--text-dim);font-size:16px}
   .empty{
-    margin-top:36px;text-align:center;color:var(--text-dim);font-size:14px;line-height:1.6;
-    padding:0 12px;
+    margin-top:36px;text-align:center;color:var(--text-dim);font-size:14px;line-height:1.6;padding:0 12px;
   }
   .empty code{
     font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--accent);
     background:var(--bg-raise);padding:2px 6px;border-radius:6px;
   }
 
-  /* ---------- player ---------- */
-  .player-wrap{margin-top:6px}
-  video{
-    width:100%;border-radius:var(--radius);background:#000;
-    border:1px solid var(--line);display:block;aspect-ratio:16/9;
+  /* ════════ custom fullscreen swipe player ════════ */
+  .player{
+    position:fixed;inset:0;z-index:100;background:#000;
+    display:none;flex-direction:column;
+    touch-action:none;overscroll-behavior:none;
   }
-  .player-meta{display:flex;align-items:center;gap:10px;margin-top:14px}
-  .player-meta .tag{min-width:58px}
-  .player-title{font-size:16px;font-weight:600}
-  .replay{
-    margin-top:18px;width:100%;padding:15px;border-radius:var(--radius);
-    border:1px solid var(--accent);background:transparent;color:var(--accent);
-    font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:19px;
-    letter-spacing:.08em;text-transform:uppercase;cursor:pointer;
-    transition:background .15s;
+  .player.show{display:flex}
+  /* the vertical track holds prev / current / next stacked; we translateY it */
+  .player-stage{position:absolute;inset:0;overflow:hidden}
+  .pslide{
+    position:absolute;left:0;right:0;height:100%;
+    display:flex;align-items:center;justify-content:center;background:#000;
   }
-  .replay:active{background:var(--bg-press)}
-  .vid-error{
-    margin-top:12px;border:1px solid var(--danger);border-radius:var(--radius);
-    padding:14px;color:var(--danger);font-size:13px;line-height:1.55;display:none;
+  .pslide video{width:100%;height:100%;object-fit:contain;background:#000}
+  .pslide .pv-loading{
+    position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#000;
   }
-  .vid-error code{font-family:'JetBrains Mono',monospace;font-size:12px}
+  .pslide.ready .pv-loading{opacity:0;pointer-events:none;transition:opacity .2s}
+  .spinner{
+    width:36px;height:36px;border-radius:50%;
+    border:3px solid rgba(255,255,255,.18);border-top-color:var(--accent);
+    animation:spin .8s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .pslide .pv-error{
+    position:absolute;left:24px;right:24px;text-align:center;color:var(--danger);
+    font-size:13px;line-height:1.6;display:none;
+  }
+  .pslide .pv-error code{font-family:'JetBrains Mono',monospace;font-size:12px;word-break:break-all}
+
+  /* top overlay bar: name + tag + section */
+  .player-top{
+    position:absolute;top:0;left:0;right:0;z-index:5;
+    padding:calc(env(safe-area-inset-top) + 14px) 18px 26px;
+    background:linear-gradient(rgba(0,0,0,.72), rgba(0,0,0,0));
+    pointer-events:none;
+  }
+  .player-top .ptag{
+    font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.16em;
+    color:var(--accent);text-transform:uppercase;
+  }
+  .player-top .pname{
+    font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:26px;
+    letter-spacing:.02em;text-transform:uppercase;line-height:1.1;margin-top:2px;
+    text-shadow:0 2px 10px rgba(0,0,0,.8);
+  }
+  .player-top .psection{
+    font-size:12px;color:var(--text-dim);margin-top:3px;
+  }
+
+  /* bottom hint bar */
+  .player-bottom{
+    position:absolute;bottom:0;left:0;right:0;z-index:5;
+    padding:24px 18px calc(env(safe-area-inset-bottom) + 16px);
+    background:linear-gradient(rgba(0,0,0,0), rgba(0,0,0,.7));
+    display:flex;align-items:center;justify-content:space-between;
+    pointer-events:none;
+  }
+  .player-bottom .phint{
+    font-size:11px;color:rgba(255,255,255,.55);display:flex;align-items:center;gap:6px;
+  }
+  .player-pos{
+    font-family:'JetBrains Mono',monospace;font-size:11px;color:rgba(255,255,255,.55);
+  }
+
+  /* section transition card that flashes when crossing into a new group */
+  .section-card{
+    position:absolute;inset:0;z-index:8;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;background:rgba(8,10,14,.96);
+    opacity:0;pointer-events:none;
+  }
+  .section-card.flash{animation:sectionFlash 0.9s ease both}
+  @keyframes sectionFlash{
+    0%{opacity:0;transform:scale(1.04)}
+    18%{opacity:1;transform:scale(1)}
+    72%{opacity:1;transform:scale(1)}
+    100%{opacity:0;transform:scale(.99)}
+  }
+  .section-card .sc-eyebrow{
+    font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.28em;
+    color:var(--accent);text-transform:uppercase;margin-bottom:10px;
+  }
+  .section-card .sc-name{
+    font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:46px;
+    letter-spacing:.04em;text-transform:uppercase;color:var(--text);text-align:center;
+    padding:0 24px;line-height:1.05;
+  }
+  .section-card .sc-arrow{margin-top:14px;color:var(--text-dim);font-size:20px}
+
+  /* tap-to-toggle play feedback */
+  .tap-icon{
+    position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(.8);
+    z-index:6;width:76px;height:76px;border-radius:50%;
+    background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;
+    color:#fff;font-size:30px;opacity:0;pointer-events:none;
+  }
+  .tap-icon.show{animation:tapPulse .5s ease both}
+  @keyframes tapPulse{0%{opacity:0;transform:translate(-50%,-50%) scale(.7)}40%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) scale(1.1)}}
+
+  /* ════════ tutorial overlay ════════ */
+  .tut{
+    position:fixed;inset:0;z-index:200;display:none;
+    align-items:flex-end;justify-content:center;
+    background:rgba(6,8,12,.6);backdrop-filter:blur(3px);
+  }
+  .tut.show{display:flex;animation:tutFade .25s ease both}
+  @keyframes tutFade{from{opacity:0}to{opacity:1}}
+  .tut-sheet{
+    width:100%;max-width:560px;background:var(--bg-raise);
+    border-top-left-radius:22px;border-top-right-radius:22px;
+    border:1px solid var(--line);border-bottom:0;
+    padding:14px 22px calc(env(safe-area-inset-bottom) + 22px);
+    box-shadow:0 -20px 60px rgba(0,0,0,.5);
+  }
+  .tut-grip{width:42px;height:5px;border-radius:3px;background:var(--line);margin:4px auto 14px}
+  .tut-skip{
+    position:absolute;top:calc(env(safe-area-inset-top) + 14px);right:18px;
+    background:rgba(20,25,35,.85);border:1px solid var(--line);color:var(--text-dim);
+    font-size:13px;padding:9px 16px;border-radius:20px;cursor:pointer;
+  }
+  .tut-skip:active{background:var(--bg-press)}
+  .tut-stage{height:188px;position:relative;border-radius:var(--radius);
+    background:var(--bg);border:1px solid var(--line);overflow:hidden;margin-bottom:18px}
+  .tut-slide{position:absolute;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column}
+  .tut-slide.active{display:flex}
+
+  /* swipe-left demo */
+  .demo-phone{
+    width:96px;height:130px;border-radius:14px;border:2px solid var(--line);
+    background:var(--bg-press);position:relative;overflow:hidden;
+  }
+  .demo-card{
+    position:absolute;inset:8px;border-radius:9px;background:var(--bg-raise);
+    border:1px solid var(--line);
+  }
+  .demo-hand{
+    position:absolute;font-size:30px;top:50%;transform:translateY(-50%);
+  }
+  .demo-hand.left{animation:handLeft 1.8s ease-in-out infinite}
+  @keyframes handLeft{0%{left:62%;opacity:0}15%{opacity:1}70%{left:8%;opacity:1}100%{left:8%;opacity:0}}
+  .demo-card.swipeleft{animation:cardLeft 1.8s ease-in-out infinite}
+  @keyframes cardLeft{0%,15%{transform:translateX(0);opacity:1}70%{transform:translateX(-70px);opacity:0}100%{transform:translateX(-70px);opacity:0}}
+
+  /* swipe-vertical demo */
+  .demo-hand.vert{animation:handVert 1.9s ease-in-out infinite}
+  @keyframes handVert{0%{top:18%;opacity:0}14%{opacity:1}68%{top:72%;opacity:1}100%{top:72%;opacity:0}}
+  .demo-stack{position:absolute;inset:8px;display:flex;flex-direction:column;gap:6px}
+  .demo-stack .ds{height:26px;border-radius:7px;background:var(--bg-raise);border:1px solid var(--line);flex:none}
+  .demo-stack.scroll{animation:stackScroll 1.9s ease-in-out infinite}
+  @keyframes stackScroll{0%,14%{transform:translateY(0)}68%,100%{transform:translateY(-38px)}}
+
+  .tut-text{text-align:center}
+  .tut-text h3{
+    font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:25px;
+    letter-spacing:.03em;text-transform:uppercase;margin-bottom:6px;
+  }
+  .tut-text p{font-size:14px;color:var(--text-dim);line-height:1.5;padding:0 6px}
+  .tut-foot{display:flex;align-items:center;justify-content:space-between;margin-top:20px}
+  .tut-dots{display:flex;gap:7px}
+  .tut-dots .d{width:8px;height:8px;border-radius:50%;background:var(--line);transition:background .2s,width .2s}
+  .tut-dots .d.on{background:var(--accent);width:20px;border-radius:5px}
+  .tut-next{
+    background:var(--accent);color:#0c0f15;border:0;border-radius:11px;
+    font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:18px;
+    letter-spacing:.06em;text-transform:uppercase;padding:12px 26px;cursor:pointer;
+  }
+  .tut-next:active{filter:brightness(.92)}
 
   button:focus-visible,.map-row:focus-visible,.clip-row:focus-visible,.side-card:focus-visible{
     outline:2px solid var(--accent);outline-offset:2px;
@@ -252,31 +386,64 @@
       </div>
     </section>
     <section class="screen" id="screen-clips"></section>
-    <section class="screen" id="screen-player">
-      <div class="player-wrap">
-        <video id="vid" playsinline controls loop preload="metadata"></video>
-        <div class="vid-error" id="vidError"></div>
-        <div class="player-meta"><span class="tag" id="pTag"></span><span class="player-title" id="pTitle"></span></div>
-        <button class="replay" id="replayBtn">&#8635;&nbsp; Replay</button>
-      </div>
-    </section>
   </main>
 </div>
 
+<!-- custom fullscreen swipe player -->
+<div class="player" id="player">
+  <div class="player-stage" id="pstage">
+    <div class="pslide" id="pslidePrev"></div>
+    <div class="pslide" id="pslideCur"></div>
+    <div class="pslide" id="pslideNext"></div>
+  </div>
+  <div class="tap-icon" id="tapIcon">&#10073;&#10073;</div>
+  <div class="section-card" id="sectionCard">
+    <div class="sc-eyebrow">Section</div>
+    <div class="sc-name" id="scName"></div>
+    <div class="sc-arrow" id="scArrow">&#9662;</div>
+  </div>
+  <div class="player-top" id="playerTop">
+    <div class="ptag" id="pTag2"></div>
+    <div class="pname" id="pName2"></div>
+    <div class="psection" id="pSection2"></div>
+  </div>
+  <div class="player-bottom">
+    <span class="phint">&#8592; swipe left to exit</span>
+    <span class="player-pos" id="pPos"></span>
+  </div>
+</div>
+
+<!-- first-launch tutorial -->
+<div class="tut" id="tut">
+  <button class="tut-skip" id="tutSkip">Skip</button>
+  <div class="tut-sheet">
+    <div class="tut-grip"></div>
+    <div class="tut-stage">
+      <div class="tut-slide active" data-slide="0">
+        <div class="demo-phone">
+          <div class="demo-card swipeleft"></div>
+          <div class="demo-hand left">&#128072;</div>
+        </div>
+      </div>
+      <div class="tut-slide" data-slide="1">
+        <div class="demo-phone">
+          <div class="demo-stack scroll"><span class="ds"></span><span class="ds"></span><span class="ds"></span><span class="ds"></span><span class="ds"></span></div>
+          <div class="demo-hand vert">&#128070;</div>
+        </div>
+      </div>
+      <div class="tut-slide" data-slide="2">
+        <div style="font-size:46px">&#127919;</div>
+      </div>
+    </div>
+    <div class="tut-text" id="tutText"></div>
+    <div class="tut-foot">
+      <div class="tut-dots" id="tutDots"></div>
+      <button class="tut-next" id="tutNext">Next</button>
+    </div>
+  </div>
+</div>
+
 <script>
-/* ════════════════════════════════════════════════════════════════
-   EDIT THIS SECTION ONLY — your maps and clips live here.
-
-   1. Trim your SteelSeries GG clip to ~10s and export as .mp4
-   2. Put the file in:  videos/<map>/<side>/your-file.mp4
-   3. Add one line below under the right map + side:
-        { name:"A execute from ramp", tag:"EXEC", group:"A site", file:"a-execute-ramp.mp4" }
-
-   tag   = small chip shown on the row (SMOKE, FLASH, MOLLY, HE, EXEC, NADE — anything)
-   group = optional heading the clip is sorted under (e.g. "A site", "Mid", "B site")
-   file  = filename inside videos/<map>/<side>/
-   ════════════════════════════════════════════════════════════════ */
-
 const MAPS = ["Mirage","Inferno","Nuke","Ancient","Anubis","Dust II","Overpass"];
 
 const CLIPS = {
@@ -400,17 +567,22 @@ const COVERS = {
 /* ════════════ end of editable section ════════════ */
 
 const $ = id => document.getElementById(id);
-const screens = ["maps","side","clips","player"];
-const state = { screen:"maps", map:null, side:null, clip:null, query:"", lastGroup:null };
+const screensList = ["maps","side","clips"];
+const state = { screen:"maps", map:null, side:null, query:"", lastGroup:null,
+                flat:[], idx:0 };
 
 const slug = s => s.toLowerCase().replace(/\s+/g,"");
 const videoPath = (map, side, file) =>
   `videos/${slug(map)}/${side}/` + file.split("/").map(encodeURIComponent).join("/");
 const sideName = s => s === "t" ? "Terrorist" : "Counter-Terrorist";
+const groupOf = c => c.group || "Clips";
+
+/* remember scroll position of the clip list so we can restore it */
+let clipScroll = 0;
 
 function go(screen){
   state.screen = screen;
-  screens.forEach(s => $("screen-"+s).classList.toggle("active", s===screen));
+  screensList.forEach(s => $("screen-"+s).classList.toggle("active", s===screen));
   document.body.classList.toggle("can-go-back", screen !== "maps");
   document.body.dataset.side = (screen==="maps"||screen==="side") ? "" : state.side;
   render();
@@ -431,16 +603,15 @@ function renderClipList(list, query){
     target.innerHTML = `<div class="empty">No clips match “${query}”.</div>`;
     return;
   }
-  const groups = [...new Set(filtered.map(c=>c.group||"Clips"))];
+  const groups = [...new Set(filtered.map(groupOf))];
   target.innerHTML = groups.map((g,i)=>{
-    const items = filtered.filter(c=>(c.group||"Clips")===g);
+    const items = filtered.filter(c=>groupOf(c)===g);
     const rows = items.map(c=>`
       <button class="clip-row" data-file="${c.file}">
         <span class="tag">${c.tag||"UTIL"}</span>
         <span class="clip-name">${c.name}</span>
         <span class="chev">&#8250;</span>
       </button>`).join("");
-    // open matching groups while searching; otherwise re-open the last-viewed group
     const isOpen = q ? true : (state.lastGroup && g === state.lastGroup);
     const openClass = isOpen ? " open" : "";
     return `<div class="group${openClass}" data-group="${i}">
@@ -452,10 +623,16 @@ function renderClipList(list, query){
       <div class="group-body"><div>${rows}</div></div>
     </div>`;
   }).join("");
-  // scroll the re-opened group into view when returning from a clip
+
+  // restore scroll to the open group when returning from a clip
   if(!q && state.lastGroup){
     const open = target.querySelector(".group.open");
-    if(open) open.scrollIntoView({block:"center"});
+    if(open){
+      requestAnimationFrame(()=>{
+        if(clipScroll){ window.scrollTo(0, clipScroll); }
+        else { open.scrollIntoView({block:"center"}); }
+      });
+    }
   }
 }
 
@@ -473,7 +650,6 @@ function render(){
         <span class="map-count">${n} clip${n===1?"":"s"}</span>
       </button>`;
     }).join("");
-    // load each map's cover from the COVERS map; apply only if it actually loads
     document.querySelectorAll("#screen-maps .map-row").forEach(row=>{
       const map = row.dataset.map;
       const url = COVERS[map];
@@ -520,82 +696,281 @@ function render(){
       });
     }
   }
-  if(state.screen==="player" && state.clip){
-    $("crumb").textContent = `${state.map.toUpperCase()} &middot; ${state.side.toUpperCase()}`.replace("&middot;","·");
-    $("title").textContent = state.clip.name;
-    $("pTag").textContent = state.clip.tag || "UTIL";
-    $("pTitle").textContent = state.clip.name;
-    const v = $("vid");
-    $("vidError").style.display = "none";
-    v.src = videoPath(state.map, state.side, state.clip.file);
-    v.play().catch(()=>{ /* autoplay may be blocked until user taps — fine */ });
-  } else {
-    const v = $("vid"); v.pause(); v.removeAttribute("src"); v.load();
-  }
 }
 
-function enterFullscreen(v){
-  try{
-    if (v.requestFullscreen){
-      v.requestFullscreen().then(()=>{
-        // try to rotate to landscape on Android; harmless if unsupported
-        screen.orientation?.lock?.("landscape").catch(()=>{});
-      }).catch(()=>{});
-    } else if (v.webkitEnterFullscreen){
-      // iPhone Safari: native fullscreen video player
-      if (v.readyState >= 1) v.webkitEnterFullscreen();
-      else v.addEventListener("loadedmetadata", ()=>{ try{ v.webkitEnterFullscreen(); }catch(_){} }, { once:true });
-    }
-  }catch(_){}
-}
-
+/* ---------- list navigation ---------- */
 document.addEventListener("click", e=>{
   const mapBtn = e.target.closest(".map-row");
   if(mapBtn){ state.map = mapBtn.dataset.map; go("side"); return; }
   const sideBtn = e.target.closest(".side-card");
-  if(sideBtn){ state.side = sideBtn.dataset.side; state.lastGroup = null; go("clips"); return; }
+  if(sideBtn){ state.side = sideBtn.dataset.side; state.lastGroup = null; clipScroll = 0; go("clips"); return; }
   const groupHead = e.target.closest(".group-head");
   if(groupHead){ groupHead.closest(".group").classList.toggle("open"); return; }
   const clipBtn = e.target.closest(".clip-row");
   if(clipBtn){
-    state.clip = (CLIPS[state.map][state.side]).find(c=>c.file===clipBtn.dataset.file);
-    state.lastGroup = state.clip ? (state.clip.group||"Clips") : null;
-    go("player");
-    enterFullscreen($("vid"));
+    clipScroll = window.scrollY;
+    openPlayer(clipBtn.dataset.file);
     return;
   }
 });
 
 $("backBtn").addEventListener("click", ()=>{
-  const order = {player:"clips", clips:"side", side:"maps"};
+  const order = {clips:"side", side:"maps"};
   if(order[state.screen]) go(order[state.screen]);
 });
 
-$("replayBtn").addEventListener("click", ()=>{
-  const v=$("vid"); v.currentTime=0; v.play();
-});
+/* ════════════ custom swipe player ════════════ */
 
-$("vid").addEventListener("error", ()=>{
-  if(!state.clip) return;
-  const err=$("vidError");
-  err.innerHTML = `Video not found. Expected file at:<br><code>${videoPath(state.map,state.side,state.clip.file)}</code>`;
-  err.style.display="block";
-});
-
-function backToClips(){
-  if(state.screen === "player"){ go("clips"); }
+function buildFlatList(){
+  // the full ordered list for the current map+side, in display (grouped) order
+  const list = (CLIPS[state.map]?.[state.side]) || [];
+  const groups = [...new Set(list.map(groupOf))];
+  const flat = [];
+  groups.forEach(g=>{
+    list.filter(c=>groupOf(c)===g).forEach(c=> flat.push(c));
+  });
+  return flat;
 }
 
-document.addEventListener("fullscreenchange", ()=>{
-  if(!document.fullscreenElement){
-    try{ screen.orientation?.unlock?.(); }catch(_){}
-    backToClips();
+function openPlayer(file){
+  state.flat = buildFlatList();
+  state.idx = Math.max(0, state.flat.findIndex(c=>c.file===file));
+  state.lastGroup = state.flat[state.idx] ? groupOf(state.flat[state.idx]) : null;
+  $("player").classList.add("show");
+  loadSlides(true);
+}
+
+function closePlayer(){
+  // pause/clear all slide videos
+  ["pslidePrev","pslideCur","pslideNext"].forEach(id=>{
+    const v = $(id).querySelector("video");
+    if(v){ v.pause(); v.removeAttribute("src"); v.load(); }
+  });
+  $("player").classList.remove("show");
+  // restore the list at the same scroll position with the right group open
+  render();
+}
+
+function slideMarkup(clip){
+  if(!clip) return "";
+  return `<video playsinline loop preload="auto"></video>
+          <div class="pv-loading"><span class="spinner"></span></div>
+          <div class="pv-error"></div>`;
+}
+
+function fillSlide(slideEl, clip, autoplay){
+  slideEl.classList.remove("ready");
+  if(!clip){ slideEl.innerHTML = ""; return; }
+  slideEl.innerHTML = slideMarkup(clip);
+  const v = slideEl.querySelector("video");
+  const errBox = slideEl.querySelector(".pv-error");
+  v.src = videoPath(state.map, state.side, clip.file);
+  const markReady = ()=> slideEl.classList.add("ready");
+  v.addEventListener("loadeddata", markReady, {once:true});
+  v.addEventListener("playing", markReady, {once:true});
+  v.addEventListener("error", ()=>{
+    slideEl.classList.add("ready");
+    errBox.innerHTML = `Video not found:<br><code>${videoPath(state.map,state.side,clip.file)}</code>`;
+    errBox.style.display = "block";
+  }, {once:true});
+  if(autoplay){ v.play().catch(()=>{}); }
+}
+
+// position the three slides vertically: prev above, cur center, next below
+function positionSlides(offset){
+  const h = window.innerHeight;
+  $("pslidePrev").style.transform = `translateY(${-h + (offset||0)}px)`;
+  $("pslideCur").style.transform  = `translateY(${(offset||0)}px)`;
+  $("pslideNext").style.transform = `translateY(${h + (offset||0)}px)`;
+}
+
+function loadSlides(autoplayCur){
+  const cur  = state.flat[state.idx];
+  const prev = state.flat[state.idx-1];
+  const next = state.flat[state.idx+1];
+  // pause any existing videos first
+  ["pslidePrev","pslideCur","pslideNext"].forEach(id=>{
+    const vid=$(id).querySelector("video"); if(vid) vid.pause();
+  });
+  fillSlide($("pslideCur"), cur, autoplayCur !== false);
+  fillSlide($("pslidePrev"), prev, false);
+  fillSlide($("pslideNext"), next, false);
+  positionSlides(0);
+  updatePlayerChrome();
+}
+
+function updatePlayerChrome(){
+  const cur = state.flat[state.idx];
+  if(!cur) return;
+  $("pTag2").textContent = cur.tag || "UTIL";
+  $("pName2").textContent = cur.name;
+  $("pSection2").textContent = groupOf(cur);
+  $("pPos").textContent = `${state.idx+1} / ${state.flat.length}`;
+  state.lastGroup = groupOf(cur);
+}
+
+// animate to a neighbouring clip; dir = +1 (next/down-swipe) or -1 (prev/up-swipe)
+let animating = false;
+function navigate(dir){
+  const target = state.idx + dir;
+  if(target < 0 || target >= state.flat.length){
+    // bounce back
+    positionSlides(0);
+    return;
   }
+  if(animating) return;
+  animating = true;
+
+  const h = window.innerHeight;
+  const fromGroup = groupOf(state.flat[state.idx]);
+  const toGroup   = groupOf(state.flat[target]);
+
+  const stage = $("pstage");
+  stage.style.transition = "transform .26s ease";
+  // moving to next (dir +1) slides everything up by h; to prev slides down by h
+  stage.style.transform = `translateY(${dir>0 ? -h : h}px)`;
+
+  setTimeout(()=>{
+    stage.style.transition = "none";
+    stage.style.transform = "translateY(0)";
+    state.idx = target;
+    loadSlides(true);
+    animating = false;
+    // section transition card if we crossed a group boundary
+    if(fromGroup !== toGroup){
+      flashSection(toGroup, dir>0 ? "down" : "up");
+    }
+  }, 270);
+}
+
+function flashSection(name, dir){
+  $("scName").textContent = name;
+  $("scArrow").innerHTML = dir === "down" ? "&#9662;" : "&#9652;";
+  const card = $("sectionCard");
+  card.classList.remove("flash");
+  void card.offsetWidth; // restart animation
+  card.classList.add("flash");
+}
+
+/* ---- touch handling on the player ---- */
+let tStartX=0, tStartY=0, tDX=0, tDY=0, tracking=false, axis=null;
+
+$("player").addEventListener("touchstart", e=>{
+  if(animating) return;
+  const t = e.touches[0];
+  tStartX = t.clientX; tStartY = t.clientY;
+  tDX = 0; tDY = 0; tracking = true; axis = null;
+}, {passive:true});
+
+$("player").addEventListener("touchmove", e=>{
+  if(!tracking) return;
+  const t = e.touches[0];
+  tDX = t.clientX - tStartX;
+  tDY = t.clientY - tStartY;
+  if(!axis){
+    if(Math.abs(tDX) > 10 || Math.abs(tDY) > 10){
+      axis = Math.abs(tDX) > Math.abs(tDY) ? "x" : "y";
+    }
+  }
+  if(axis === "y"){
+    e.preventDefault();
+    // follow finger with mild resistance at the ends
+    let off = tDY;
+    const atTop = state.idx === 0 && tDY > 0;
+    const atEnd = state.idx === state.flat.length-1 && tDY < 0;
+    if(atTop || atEnd) off = tDY * 0.3;
+    positionSlides(off);
+  } else if(axis === "x"){
+    e.preventDefault();
+  }
+}, {passive:false});
+
+$("player").addEventListener("touchend", ()=>{
+  if(!tracking) return;
+  tracking = false;
+  const swipeThresh = 60;
+  if(axis === "x" && tDX < -swipeThresh){
+    // swipe left → exit
+    closePlayer();
+    return;
+  }
+  if(axis === "y"){
+    if(tDY < -swipeThresh){ navigate(+1); }        // swipe up → next
+    else if(tDY > swipeThresh){ navigate(-1); }    // swipe down → prev
+    else { positionSlides(0); }                    // not far enough → snap back
+  } else {
+    positionSlides(0);
+  }
+  axis = null;
 });
-// iPhone Safari fires its own event when the native video player closes
-$("vid").addEventListener("webkitendfullscreen", ()=>{ backToClips(); });
+
+/* tap center to play/pause */
+$("pstage").addEventListener("click", e=>{
+  // ignore if this was the tail end of a swipe
+  if(Math.abs(tDX) > 8 || Math.abs(tDY) > 8) return;
+  const v = $("pslideCur").querySelector("video");
+  if(!v) return;
+  if(v.paused){ v.play().catch(()=>{}); showTap("&#9654;"); }
+  else { v.pause(); showTap("&#10073;&#10073;"); }
+});
+function showTap(glyph){
+  const el = $("tapIcon");
+  el.innerHTML = glyph;
+  el.classList.remove("show"); void el.offsetWidth; el.classList.add("show");
+}
+
+/* keyboard support (desktop testing) */
+document.addEventListener("keydown", e=>{
+  if(!$("player").classList.contains("show")) return;
+  if(e.key === "ArrowDown"){ navigate(+1); }
+  else if(e.key === "ArrowUp"){ navigate(-1); }
+  else if(e.key === "ArrowLeft" || e.key === "Escape"){ closePlayer(); }
+});
+
+window.addEventListener("resize", ()=>{
+  if($("player").classList.contains("show")) positionSlides(0);
+});
+
+/* ════════════ tutorial (once per session) ════════════ */
+const TUT_SLIDES = [
+  { h:"Swipe left to exit", p:"When you're watching a lineup, swipe left to jump back to the list." },
+  { h:"Swipe up & down", p:"Flick up for the next lineup, down for the previous — it flows from one section into the next." },
+  { h:"Enjoy the Util Book", p:"That's it. Pick a map, pick a side, and go find your nades." },
+];
+let tutIndex = 0;
+
+function showTutorial(){
+  tutIndex = 0;
+  renderTut();
+  $("tut").classList.add("show");
+}
+function renderTut(){
+  $("tutText").innerHTML = `<h3>${TUT_SLIDES[tutIndex].h}</h3><p>${TUT_SLIDES[tutIndex].p}</p>`;
+  document.querySelectorAll(".tut-slide").forEach(s=>{
+    s.classList.toggle("active", +s.dataset.slide === tutIndex);
+  });
+  $("tutDots").innerHTML = TUT_SLIDES.map((_,i)=>`<span class="d${i===tutIndex?" on":""}"></span>`).join("");
+  $("tutNext").textContent = tutIndex === TUT_SLIDES.length-1 ? "Start" : "Next";
+}
+function closeTutorial(){
+  $("tut").classList.remove("show");
+  try{ sessionStorage.setItem("ub_tut_seen","1"); }catch(_){}
+}
+$("tutNext").addEventListener("click", ()=>{
+  if(tutIndex < TUT_SLIDES.length-1){ tutIndex++; renderTut(); }
+  else { closeTutorial(); }
+});
+$("tutSkip").addEventListener("click", closeTutorial);
+$("tut").addEventListener("click", e=>{ if(e.target === $("tut")) closeTutorial(); });
+
+function maybeShowTutorial(){
+  let seen = false;
+  try{ seen = sessionStorage.getItem("ub_tut_seen") === "1"; }catch(_){}
+  if(!seen) showTutorial();
+}
 
 render();
+maybeShowTutorial();
 </script>
 </body>
 </html>
