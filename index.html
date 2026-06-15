@@ -401,7 +401,7 @@ const COVERS = {
 
 const $ = id => document.getElementById(id);
 const screens = ["maps","side","clips","player"];
-const state = { screen:"maps", map:null, side:null, clip:null, query:"" };
+const state = { screen:"maps", map:null, side:null, clip:null, query:"", lastGroup:null };
 
 const slug = s => s.toLowerCase().replace(/\s+/g,"");
 const videoPath = (map, side, file) =>
@@ -440,8 +440,9 @@ function renderClipList(list, query){
         <span class="clip-name">${c.name}</span>
         <span class="chev">&#8250;</span>
       </button>`).join("");
-    // when searching, open matching groups automatically
-    const openClass = q ? " open" : "";
+    // open matching groups while searching; otherwise re-open the last-viewed group
+    const isOpen = q ? true : (state.lastGroup && g === state.lastGroup);
+    const openClass = isOpen ? " open" : "";
     return `<div class="group${openClass}" data-group="${i}">
       <button class="group-head" data-group="${i}">
         <span class="group-title">${g}</span>
@@ -451,6 +452,11 @@ function renderClipList(list, query){
       <div class="group-body"><div>${rows}</div></div>
     </div>`;
   }).join("");
+  // scroll the re-opened group into view when returning from a clip
+  if(!q && state.lastGroup){
+    const open = target.querySelector(".group.open");
+    if(open) open.scrollIntoView({block:"center"});
+  }
 }
 
 function render(){
@@ -547,12 +553,13 @@ document.addEventListener("click", e=>{
   const mapBtn = e.target.closest(".map-row");
   if(mapBtn){ state.map = mapBtn.dataset.map; go("side"); return; }
   const sideBtn = e.target.closest(".side-card");
-  if(sideBtn){ state.side = sideBtn.dataset.side; go("clips"); return; }
+  if(sideBtn){ state.side = sideBtn.dataset.side; state.lastGroup = null; go("clips"); return; }
   const groupHead = e.target.closest(".group-head");
   if(groupHead){ groupHead.closest(".group").classList.toggle("open"); return; }
   const clipBtn = e.target.closest(".clip-row");
   if(clipBtn){
     state.clip = (CLIPS[state.map][state.side]).find(c=>c.file===clipBtn.dataset.file);
+    state.lastGroup = state.clip ? (state.clip.group||"Clips") : null;
     go("player");
     enterFullscreen($("vid"));
     return;
@@ -575,11 +582,18 @@ $("vid").addEventListener("error", ()=>{
   err.style.display="block";
 });
 
+function backToClips(){
+  if(state.screen === "player"){ go("clips"); }
+}
+
 document.addEventListener("fullscreenchange", ()=>{
   if(!document.fullscreenElement){
     try{ screen.orientation?.unlock?.(); }catch(_){}
+    backToClips();
   }
 });
+// iPhone Safari fires its own event when the native video player closes
+$("vid").addEventListener("webkitendfullscreen", ()=>{ backToClips(); });
 
 render();
 </script>
