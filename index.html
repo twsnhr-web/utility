@@ -795,29 +795,24 @@ function fillSlide(slideEl, clip, autoplay){
   v.playsInline = true;
   v.preload = "auto";
   v.src = videoPath(state.map, state.side, clip.file);
+  v.load();
+
   const markReady = ()=> slideEl.classList.add("ready");
   v.addEventListener("loadeddata", markReady, {once:true});
   v.addEventListener("playing", markReady, {once:true});
 
   if(autoplay){
-    // current clip: play as soon as possible
-    const tryPlay = ()=> v.play().catch(()=>{});
-    v.addEventListener("canplay", tryPlay, {once:true});
-    v.addEventListener("loadeddata", tryPlay, {once:true});
-    tryPlay();
-  } else {
-    // neighbour clip: prime the buffer by playing muted briefly then pausing,
-    // so it has decoded frames ready and starts instantly when swiped to
-    v.load();
-    const prime = ()=>{
-      v.play().then(()=>{
-        // let it buffer a moment, then pause back to the first frame
-        setTimeout(()=>{ try{ v.pause(); v.currentTime = 0; }catch(_){} }, 120);
-      }).catch(()=>{});
-    };
-    v.addEventListener("canplaythrough", prime, {once:true});
-    v.addEventListener("loadeddata", prime, {once:true});
+    // current clip: force playback through every opportunity until it sticks
+    const kick = ()=>{ const p=v.play(); if(p&&p.catch) p.catch(()=>{}); };
+    ["loadedmetadata","loadeddata","canplay","canplaythrough"].forEach(ev=>
+      v.addEventListener(ev, kick, {once:true})
+    );
+    kick();
+    // a couple of delayed retries cover slow first-frame decodes
+    setTimeout(kick, 80);
+    setTimeout(kick, 220);
   }
+  // neighbours: just let preload="auto" buffer them in the background (no play/pause priming)
 
   v.addEventListener("error", ()=>{
     slideEl.classList.add("ready");
