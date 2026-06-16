@@ -482,6 +482,7 @@
           <img src="assets/karrigan.gif" alt="" class="karrigan-gif">
           <span class="weewoo woo" id="wwRight">WOO</span>
         </div>
+        <video id="weewooAudio" src="assets/weewoo.mp4" playsinline preload="auto" style="display:none"></video>
       </div>
     </div>
     <div class="tut-text" id="tutText"></div>
@@ -1086,6 +1087,21 @@ function closeTutorial(){
 /* WEE / WOO: one visible at a time, swap every 0.3s, toggle white<->red each time */
 function startWeeWoo(){
   stopWeeWoo();
+  // play the karrigan wee-woo sound once
+  const a = $("weewooAudio");
+  if(a){
+    try{
+      a.currentTime = 0;
+      a.muted = false;
+      a.volume = 1;
+      const p = a.play();
+      if(p && p.catch) p.catch(()=>{
+        // if the browser blocks it, play on the next tap anywhere in the tutorial
+        const once = ()=>{ a.play().catch(()=>{}); document.removeEventListener("pointerdown", once); };
+        document.addEventListener("pointerdown", once, {once:true});
+      });
+    }catch(_){}
+  }
   const left = $("wwLeft"), right = $("wwRight");
   let showLeft = true;       // which side is visible this tick
   let leftRed = true, rightRed = false;  // colour state per side
@@ -1106,6 +1122,8 @@ function startWeeWoo(){
 }
 function stopWeeWoo(){
   if(weewooTimer){ clearInterval(weewooTimer); weewooTimer = null; }
+  const a = $("weewooAudio");
+  if(a){ try{ a.pause(); a.currentTime = 0; }catch(_){} }
   const left = $("wwLeft"), right = $("wwRight");
   if(left) left.classList.remove("show","red","white");
   if(right) right.classList.remove("show","red","white");
