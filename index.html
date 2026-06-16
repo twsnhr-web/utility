@@ -333,10 +333,10 @@
   .demo-hand{
     position:absolute;font-size:30px;top:50%;transform:translateY(-50%);
   }
-  .demo-hand.left{animation:handLeft 1.8s ease-in-out infinite}
-  @keyframes handLeft{0%{left:62%;opacity:0}15%{opacity:1}70%{left:8%;opacity:1}100%{left:8%;opacity:0}}
-  .demo-card.swipeleft{animation:cardLeft 1.8s ease-in-out infinite}
-  @keyframes cardLeft{0%,15%{transform:translateX(0);opacity:1}70%{transform:translateX(-70px);opacity:0}100%{transform:translateX(-70px);opacity:0}}
+  .demo-hand.left{animation:handRight 1.8s ease-in-out infinite}
+  @keyframes handRight{0%{left:8%;opacity:0}15%{opacity:1}70%{left:62%;opacity:1}100%{left:62%;opacity:0}}
+  .demo-card.swipeleft{animation:cardRight 1.8s ease-in-out infinite}
+  @keyframes cardRight{0%,15%{transform:translateX(0);opacity:1}70%{transform:translateX(70px);opacity:0}100%{transform:translateX(70px);opacity:0}}
 
   /* swipe-vertical demo */
   .demo-hand.vert{animation:handVert 1.9s ease-in-out infinite}
@@ -408,7 +408,7 @@
     <div class="psection" id="pSection2"></div>
   </div>
   <div class="player-bottom">
-    <span class="phint">&#8592; swipe left to exit</span>
+    <span class="phint">swipe right to exit &#8594;</span>
     <span class="player-pos" id="pPos"></span>
   </div>
 </div>
@@ -422,7 +422,7 @@
       <div class="tut-slide active" data-slide="0">
         <div class="demo-phone">
           <div class="demo-card swipeleft"></div>
-          <div class="demo-hand left">&#128072;</div>
+          <div class="demo-hand left">&#128073;</div>
         </div>
       </div>
       <div class="tut-slide" data-slide="1">
@@ -432,7 +432,7 @@
         </div>
       </div>
       <div class="tut-slide" data-slide="2">
-        <div style="font-size:46px">&#127919;</div>
+        <img src="assets/karrigan.gif" alt="" style="max-height:150px;max-width:80%;border-radius:10px">
       </div>
     </div>
     <div class="tut-text" id="tutText"></div>
@@ -714,9 +714,36 @@ document.addEventListener("click", e=>{
   }
 });
 
-$("backBtn").addEventListener("click", ()=>{
+function goBack(){
   const order = {clips:"side", side:"maps"};
   if(order[state.screen]) go(order[state.screen]);
+}
+
+$("backBtn").addEventListener("click", goBack);
+
+/* swipe right anywhere in the menus to step back one screen */
+let mStartX=0, mStartY=0, mTracking=false, mAxis=null, mDX=0, mDY=0;
+const appEl = document.getElementById("app");
+appEl.addEventListener("touchstart", e=>{
+  // don't hijack horizontal swipes that start inside the search field
+  if(e.target.closest(".search-wrap")) { mTracking=false; return; }
+  const t=e.touches[0];
+  mStartX=t.clientX; mStartY=t.clientY; mDX=0; mDY=0; mTracking=true; mAxis=null;
+}, {passive:true});
+appEl.addEventListener("touchmove", e=>{
+  if(!mTracking) return;
+  const t=e.touches[0];
+  mDX=t.clientX-mStartX; mDY=t.clientY-mStartY;
+  if(!mAxis && (Math.abs(mDX)>10 || Math.abs(mDY)>10)){
+    mAxis = Math.abs(mDX)>Math.abs(mDY) ? "x" : "y";
+  }
+}, {passive:true});
+appEl.addEventListener("touchend", ()=>{
+  if(!mTracking) return;
+  mTracking=false;
+  // right swipe (positive X), mostly horizontal, past threshold → go back
+  if(mAxis==="x" && mDX > 70){ goBack(); }
+  mAxis=null;
 });
 
 /* ════════════ custom swipe player ════════════ */
@@ -753,7 +780,7 @@ function closePlayer(){
 
 function slideMarkup(clip){
   if(!clip) return "";
-  return `<video playsinline loop preload="auto"></video>
+  return `<video playsinline loop muted autoplay preload="auto"></video>
           <div class="pv-loading"><span class="spinner"></span></div>
           <div class="pv-error"></div>`;
 }
@@ -764,16 +791,39 @@ function fillSlide(slideEl, clip, autoplay){
   slideEl.innerHTML = slideMarkup(clip);
   const v = slideEl.querySelector("video");
   const errBox = slideEl.querySelector(".pv-error");
+  v.muted = true;            // required for mobile autoplay
+  v.playsInline = true;
+  v.preload = "auto";
   v.src = videoPath(state.map, state.side, clip.file);
   const markReady = ()=> slideEl.classList.add("ready");
   v.addEventListener("loadeddata", markReady, {once:true});
   v.addEventListener("playing", markReady, {once:true});
+
+  if(autoplay){
+    // current clip: play as soon as possible
+    const tryPlay = ()=> v.play().catch(()=>{});
+    v.addEventListener("canplay", tryPlay, {once:true});
+    v.addEventListener("loadeddata", tryPlay, {once:true});
+    tryPlay();
+  } else {
+    // neighbour clip: prime the buffer by playing muted briefly then pausing,
+    // so it has decoded frames ready and starts instantly when swiped to
+    v.load();
+    const prime = ()=>{
+      v.play().then(()=>{
+        // let it buffer a moment, then pause back to the first frame
+        setTimeout(()=>{ try{ v.pause(); v.currentTime = 0; }catch(_){} }, 120);
+      }).catch(()=>{});
+    };
+    v.addEventListener("canplaythrough", prime, {once:true});
+    v.addEventListener("loadeddata", prime, {once:true});
+  }
+
   v.addEventListener("error", ()=>{
     slideEl.classList.add("ready");
     errBox.innerHTML = `Video not found:<br><code>${videoPath(state.map,state.side,clip.file)}</code>`;
     errBox.style.display = "block";
   }, {once:true});
-  if(autoplay){ v.play().catch(()=>{}); }
 }
 
 // position the three slides vertically: prev above, cur center, next below
@@ -889,8 +939,8 @@ $("player").addEventListener("touchend", ()=>{
   if(!tracking) return;
   tracking = false;
   const swipeThresh = 60;
-  if(axis === "x" && tDX < -swipeThresh){
-    // swipe left → exit
+  if(axis === "x" && tDX > swipeThresh){
+    // swipe right → exit
     closePlayer();
     return;
   }
@@ -924,7 +974,7 @@ document.addEventListener("keydown", e=>{
   if(!$("player").classList.contains("show")) return;
   if(e.key === "ArrowDown"){ navigate(+1); }
   else if(e.key === "ArrowUp"){ navigate(-1); }
-  else if(e.key === "ArrowLeft" || e.key === "Escape"){ closePlayer(); }
+  else if(e.key === "ArrowRight" || e.key === "Escape"){ closePlayer(); }
 });
 
 window.addEventListener("resize", ()=>{
@@ -933,7 +983,7 @@ window.addEventListener("resize", ()=>{
 
 /* ════════════ tutorial (once per session) ════════════ */
 const TUT_SLIDES = [
-  { h:"Swipe left to exit", p:"When you're watching a lineup, swipe left to jump back to the list." },
+  { h:"Swipe right to exit", p:"When you're watching a lineup, swipe right to jump back to the list." },
   { h:"Swipe up & down", p:"Flick up for the next lineup, down for the previous — it flows from one section into the next." },
   { h:"Enjoy the Util Book", p:"That's it. Pick a map, pick a side, and go find your nades." },
 ];
