@@ -375,6 +375,18 @@
     95%,100%{transform:rotate(-90deg)}
   }
 
+  /* filter-chips demo */
+  .demo-chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;padding:0 18px;max-width:260px}
+  .demo-chips .dc{
+    padding:8px 14px;border-radius:16px;font-size:13px;font-weight:500;
+    background:var(--bg-raise);border:1px solid var(--line);color:var(--text-dim);
+  }
+  .demo-chips .dc-on{
+    background:var(--accent);border-color:var(--accent);color:#0c0f15;font-weight:600;
+    animation:chipPulse 1.6s ease-in-out infinite;
+  }
+  @keyframes chipPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+
   /* WEE / WOO on the karrigan slide */
   .weewoo-wrap{display:flex;align-items:center;justify-content:center;gap:14px}
   .karrigan-gif{max-height:150px;max-width:55%;border-radius:10px}
@@ -477,6 +489,15 @@
         </div>
       </div>
       <div class="tut-slide" data-slide="3">
+        <div class="demo-chips">
+          <span class="dc">All</span>
+          <span class="dc dc-on">Flash</span>
+          <span class="dc">Nade</span>
+          <span class="dc">Molotov</span>
+          <span class="dc">Smoke</span>
+        </div>
+      </div>
+      <div class="tut-slide" data-slide="4">
         <div class="weewoo-wrap">
           <span class="weewoo wee" id="wwLeft">WEE</span>
           <img src="assets/karrigan.gif" alt="" class="karrigan-gif">
@@ -812,8 +833,14 @@ appEl.addEventListener("touchend", ()=>{
 /* ════════════ custom swipe player ════════════ */
 
 function buildFlatList(){
-  // the full ordered list for the current map+side, in display (grouped) order
-  const list = (CLIPS[state.map]?.[state.side]) || [];
+  // the ordered list for the current map+side, in display (grouped) order,
+  // restricted to the active type filter so the player swipes only within it
+  let list = (CLIPS[state.map]?.[state.side]) || [];
+  if(state.filter){
+    const def = FILTER_TYPES.find(f=>f.key===state.filter);
+    const tags = def ? def.tags : [state.filter];
+    list = list.filter(c => tags.includes((c.tag||"").toUpperCase()));
+  }
   const groups = [...new Set(list.map(groupOf))];
   const flat = [];
   groups.forEach(g=>{
@@ -856,7 +883,9 @@ function fillSlide(slideEl, clip, autoplay){
   slideEl.innerHTML = slideMarkup(clip);
   const v = slideEl.querySelector("video");
   const errBox = slideEl.querySelector(".pv-error");
-  v.muted = true;            // required for mobile autoplay
+  v.muted = true;            // muted = eligible for autoplay on mobile (applies to ALL slides)
+  v.defaultMuted = true;
+  v.setAttribute("muted","");
   v.playsInline = true;
   v.preload = "auto";
   v.src = videoPath(state.map, state.side, clip.file);
@@ -868,19 +897,22 @@ function fillSlide(slideEl, clip, autoplay){
 
   if(autoplay){
     userPaused = false;
-    const kick = ()=>{ if(userPaused) return; const p=v.play(); if(p&&p.catch) p.catch(()=>{}); };
-    // fire on every load milestone (NOT once-only, so late events still kick it)
-    ["loadedmetadata","loadeddata","canplay","canplaythrough","stalled","waiting"].forEach(ev=>
+    const kick = ()=>{
+      if(userPaused) return;
+      v.muted = true;                 // stay muted so autoplay is always allowed
+      const p = v.play();
+      if(p && p.catch) p.catch(()=>{});
+    };
+    // fire on every relevant event, repeatedly, so a late-ready clip still starts
+    ["loadstart","loadedmetadata","loadeddata","canplay","canplaythrough","stalled","waiting","suspend"].forEach(ev=>
       v.addEventListener(ev, kick)
     );
-    // persistent watcher: if it pauses while it should be playing, resume
+    // if it pauses while it should be playing, resume
     v.addEventListener("pause", ()=>{ if(!userPaused) setTimeout(kick, 30); });
     kick();
-    setTimeout(kick, 80);
-    setTimeout(kick, 220);
-    setTimeout(kick, 500);
+    [60,150,300,600,1000].forEach(ms=> setTimeout(kick, ms));
   }
-  // neighbours: preload="auto" buffers them in the background
+  // neighbours stay muted+buffered so they autoplay instantly once they become current
 
   v.addEventListener("error", ()=>{
     slideEl.classList.add("ready");
@@ -1049,6 +1081,7 @@ const TUT_SLIDES = [
   { h:"Turn your phone sideways", p:"The Util Book works best in landscape — flip your phone for the clearest view of each lineup." },
   { h:"Swipe right to exit", p:"When you're watching a lineup, swipe right to jump back to the list." },
   { h:"Swipe up & down", p:"Flick up for the next lineup, down for the previous — it flows from one section into the next." },
+  { h:"Filter by type", p:"Use the chips at the top to show only flashes, nades, molotovs or smokes for that map and side." },
   { h:"Enjoy the Util Book", p:"That's it. Pick a map, pick a side, and go find your nades." },
 ];
 let tutIndex = 0;
