@@ -128,7 +128,20 @@
   .side-card.t:active{border-color:var(--t-accent)}
   .side-card.ct:active{border-color:var(--ct-accent)}
 
-  /* ---------- search ---------- */
+  /* ---------- filter chips ---------- */
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin:2px 0 16px}
+  .chip{
+    flex:none;padding:9px 16px;border-radius:20px;cursor:pointer;
+    background:var(--bg-raise);border:1px solid var(--line);color:var(--text-dim);
+    font-family:'Inter',sans-serif;font-size:13px;font-weight:500;
+    transition:background .15s,border-color .15s,color .15s;
+  }
+  .chip:active{background:var(--bg-press)}
+  .chip.on{
+    background:var(--accent);border-color:var(--accent);color:#0c0f15;font-weight:600;
+  }
+
+  /* ---------- search (legacy, kept for safety) ---------- */
   .search-wrap{position:relative;display:flex;align-items:center;margin:2px 0 16px}
   .search-icon{position:absolute;left:14px;color:var(--text-dim);font-size:15px;pointer-events:none}
   .search-input{
@@ -346,6 +359,33 @@
   .demo-stack.scroll{animation:stackScroll 1.9s ease-in-out infinite}
   @keyframes stackScroll{0%,14%{transform:translateY(0)}68%,100%{transform:translateY(-38px)}}
 
+  /* rotate-phone demo */
+  .demo-rotate{display:flex;align-items:center;justify-content:center}
+  .demo-phone-rot{
+    width:78px;height:140px;border-radius:14px;border:2px solid var(--accent);
+    background:var(--bg-press);display:flex;align-items:center;justify-content:center;
+    transform-origin:center;animation:phoneFlip 2.2s ease-in-out infinite;
+  }
+  .demo-phone-rot .rot-screen{
+    width:60%;height:78%;border-radius:6px;background:var(--bg-raise);border:1px solid var(--line);
+  }
+  @keyframes phoneFlip{
+    0%,20%{transform:rotate(0deg)}
+    55%,75%{transform:rotate(-90deg)}
+    95%,100%{transform:rotate(-90deg)}
+  }
+
+  /* WEE / WOO on the karrigan slide */
+  .weewoo-wrap{display:flex;align-items:center;justify-content:center;gap:14px}
+  .karrigan-gif{max-height:150px;max-width:55%;border-radius:10px}
+  .weewoo{
+    font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:30px;
+    letter-spacing:.08em;visibility:hidden;min-width:46px;text-align:center;
+  }
+  .weewoo.show{visibility:visible}
+  .weewoo.red{color:#e3473a}
+  .weewoo.white{color:#ffffff}
+
   .tut-text{text-align:center}
   .tut-text h3{
     font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:25px;
@@ -354,8 +394,8 @@
   .tut-text p{font-size:14px;color:var(--text-dim);line-height:1.5;padding:0 6px}
   .tut-foot{display:flex;align-items:center;justify-content:space-between;margin-top:20px}
   .tut-dots{display:flex;gap:7px}
-  .tut-dots .d{width:8px;height:8px;border-radius:50%;background:var(--line);transition:background .2s,width .2s}
-  .tut-dots .d.on{background:var(--accent);width:20px;border-radius:5px}
+  .tut-dots .d{width:8px;height:8px;border-radius:50%;background:rgba(221,178,67,.25);transition:background .2s,width .2s}
+  .tut-dots .d.on{background:rgba(221,178,67,.7);width:20px;border-radius:5px}
   .tut-next{
     background:var(--accent);color:#0c0f15;border:0;border-radius:11px;
     font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:18px;
@@ -418,21 +458,30 @@
   <button class="tut-skip" id="tutSkip">Skip</button>
   <div class="tut-sheet">
     <div class="tut-grip"></div>
-    <div class="tut-stage">
+    <div class="tut-stage" id="tutStage">
       <div class="tut-slide active" data-slide="0">
+        <div class="demo-rotate">
+          <div class="demo-phone-rot"><span class="rot-screen"></span></div>
+        </div>
+      </div>
+      <div class="tut-slide" data-slide="1">
         <div class="demo-phone">
           <div class="demo-card swipeleft"></div>
           <div class="demo-hand left">&#128073;</div>
         </div>
       </div>
-      <div class="tut-slide" data-slide="1">
+      <div class="tut-slide" data-slide="2">
         <div class="demo-phone">
           <div class="demo-stack scroll"><span class="ds"></span><span class="ds"></span><span class="ds"></span><span class="ds"></span><span class="ds"></span></div>
           <div class="demo-hand vert">&#128070;</div>
         </div>
       </div>
-      <div class="tut-slide" data-slide="2">
-        <img src="assets/karrigan.gif" alt="" style="max-height:150px;max-width:80%;border-radius:10px">
+      <div class="tut-slide" data-slide="3">
+        <div class="weewoo-wrap">
+          <span class="weewoo wee" id="wwLeft">WEE</span>
+          <img src="assets/karrigan.gif" alt="" class="karrigan-gif">
+          <span class="weewoo woo" id="wwRight">WOO</span>
+        </div>
       </div>
     </div>
     <div class="tut-text" id="tutText"></div>
@@ -568,7 +617,7 @@ const COVERS = {
 
 const $ = id => document.getElementById(id);
 const screensList = ["maps","side","clips"];
-const state = { screen:"maps", map:null, side:null, query:"", lastGroup:null,
+const state = { screen:"maps", map:null, side:null, filter:"", lastGroup:null,
                 flat:[], idx:0 };
 
 const slug = s => s.toLowerCase().replace(/\s+/g,"");
@@ -589,20 +638,23 @@ function go(screen){
   window.scrollTo(0,0);
 }
 
-function renderClipList(list, query){
-  const q = (query||"").trim().toLowerCase();
-  const match = c => !q
-    || (c.name||"").toLowerCase().includes(q)
-    || (c.group||"").toLowerCase().includes(q)
-    || (c.tag||"").toLowerCase().includes(q);
-  const filtered = list.filter(match);
+function renderClipList(list, filterKey){
+  // filterKey is "" (All) or a type key like FLASH/NADE/MOLLY/SMOKE
+  let filtered = list;
+  if(filterKey){
+    const def = FILTER_TYPES.find(f=>f.key===filterKey);
+    const tags = def ? def.tags : [filterKey];
+    filtered = list.filter(c => tags.includes((c.tag||"").toUpperCase()));
+  }
   const target = $("clipResults");
   if(!target) return;
 
   if(!filtered.length){
-    target.innerHTML = `<div class="empty">No clips match “${query}”.</div>`;
+    const label = (FILTER_TYPES.find(f=>f.key===filterKey)||{}).label || "that type";
+    target.innerHTML = `<div class="empty">No ${label.toLowerCase()} lineups on this side yet.</div>`;
     return;
   }
+  const filtering = !!filterKey;
   const groups = [...new Set(filtered.map(groupOf))];
   target.innerHTML = groups.map((g,i)=>{
     const items = filtered.filter(c=>groupOf(c)===g);
@@ -612,7 +664,8 @@ function renderClipList(list, query){
         <span class="clip-name">${c.name}</span>
         <span class="chev">&#8250;</span>
       </button>`).join("");
-    const isOpen = q ? true : (state.lastGroup && g === state.lastGroup);
+    // when a filter is active, open every group so results are visible
+    const isOpen = filtering ? true : (state.lastGroup && g === state.lastGroup);
     const openClass = isOpen ? " open" : "";
     return `<div class="group${openClass}" data-group="${i}">
       <button class="group-head" data-group="${i}">
@@ -624,8 +677,8 @@ function renderClipList(list, query){
     </div>`;
   }).join("");
 
-  // restore scroll to the open group when returning from a clip
-  if(!q && state.lastGroup){
+  // restore scroll to the open group when returning from a clip (only when not filtering)
+  if(!filtering && state.lastGroup){
     const open = target.querySelector(".group.open");
     if(open){
       requestAnimationFrame(()=>{
@@ -675,35 +728,44 @@ function render(){
         Drop a trimmed clip into<br><code>videos/${slug(state.map)}/${state.side}/</code><br>
         and add it to the CLIPS list at the top of this file.</div>`;
     } else {
+      const chips = FILTER_TYPES.map(f=>
+        `<button class="chip${state.filter===f.key?" on":""}" data-filter="${f.key}">${f.label}</button>`
+      ).join("");
       $("screen-clips").innerHTML = `
-        <div class="search-wrap">
-          <span class="search-icon">&#9906;</span>
-          <input type="text" id="clipSearch" class="search-input" placeholder="Search clips…"
-                 autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
-          <button class="search-clear" id="searchClear" aria-label="Clear">&times;</button>
+        <div class="chips">
+          <button class="chip${!state.filter?" on":""}" data-filter="">All</button>
+          ${chips}
         </div>
         <div id="clipResults"></div>`;
-      renderClipList(list, "");
-      const input = $("clipSearch");
-      input.addEventListener("input", ()=>{
-        state.query = input.value;
-        $("searchClear").style.display = input.value ? "flex" : "none";
-        renderClipList(list, input.value);
-      });
-      $("searchClear").addEventListener("click", ()=>{
-        input.value=""; state.query=""; $("searchClear").style.display="none";
-        renderClipList(list, ""); input.focus();
-      });
+      renderClipList(list, state.filter);
     }
   }
 }
+
+/* the filter chips and which tag values they match */
+const FILTER_TYPES = [
+  { key:"FLASH", label:"Flash",   tags:["FLASH"] },
+  { key:"NADE",  label:"Nade",    tags:["NADE","HE"] },
+  { key:"MOLLY", label:"Molotov", tags:["MOLLY","INCENDIARY","FIRE"] },
+  { key:"SMOKE", label:"Smoke",   tags:["SMOKE"] },
+];
 
 /* ---------- list navigation ---------- */
 document.addEventListener("click", e=>{
   const mapBtn = e.target.closest(".map-row");
   if(mapBtn){ state.map = mapBtn.dataset.map; go("side"); return; }
   const sideBtn = e.target.closest(".side-card");
-  if(sideBtn){ state.side = sideBtn.dataset.side; state.lastGroup = null; clipScroll = 0; go("clips"); return; }
+  if(sideBtn){ state.side = sideBtn.dataset.side; state.lastGroup = null; state.filter = ""; clipScroll = 0; go("clips"); return; }
+  const chip = e.target.closest(".chip");
+  if(chip){
+    state.filter = chip.dataset.filter || "";
+    clipScroll = 0; state.lastGroup = null;
+    const list = (CLIPS[state.map]?.[state.side]) || [];
+    // update chip highlight without a full re-render
+    document.querySelectorAll(".chip").forEach(c=>c.classList.toggle("on", (c.dataset.filter||"")===state.filter));
+    renderClipList(list, state.filter);
+    return;
+  }
   const groupHead = e.target.closest(".group-head");
   if(groupHead){ groupHead.closest(".group").classList.toggle("open"); return; }
   const clipBtn = e.target.closest(".clip-row");
@@ -725,8 +787,8 @@ $("backBtn").addEventListener("click", goBack);
 let mStartX=0, mStartY=0, mTracking=false, mAxis=null, mDX=0, mDY=0;
 const appEl = document.getElementById("app");
 appEl.addEventListener("touchstart", e=>{
-  // don't hijack horizontal swipes that start inside the search field
-  if(e.target.closest(".search-wrap")) { mTracking=false; return; }
+  // don't hijack horizontal swipes that start on the filter chips
+  if(e.target.closest(".chips")) { mTracking=false; return; }
   const t=e.touches[0];
   mStartX=t.clientX; mStartY=t.clientY; mDX=0; mDY=0; mTracking=true; mAxis=null;
 }, {passive:true});
@@ -785,6 +847,8 @@ function slideMarkup(clip){
           <div class="pv-error"></div>`;
 }
 
+let userPaused = false;  // set true only when the user taps to pause
+
 function fillSlide(slideEl, clip, autoplay){
   slideEl.classList.remove("ready");
   if(!clip){ slideEl.innerHTML = ""; return; }
@@ -802,17 +866,20 @@ function fillSlide(slideEl, clip, autoplay){
   v.addEventListener("playing", markReady, {once:true});
 
   if(autoplay){
-    // current clip: force playback through every opportunity until it sticks
-    const kick = ()=>{ const p=v.play(); if(p&&p.catch) p.catch(()=>{}); };
-    ["loadedmetadata","loadeddata","canplay","canplaythrough"].forEach(ev=>
-      v.addEventListener(ev, kick, {once:true})
+    userPaused = false;
+    const kick = ()=>{ if(userPaused) return; const p=v.play(); if(p&&p.catch) p.catch(()=>{}); };
+    // fire on every load milestone (NOT once-only, so late events still kick it)
+    ["loadedmetadata","loadeddata","canplay","canplaythrough","stalled","waiting"].forEach(ev=>
+      v.addEventListener(ev, kick)
     );
+    // persistent watcher: if it pauses while it should be playing, resume
+    v.addEventListener("pause", ()=>{ if(!userPaused) setTimeout(kick, 30); });
     kick();
-    // a couple of delayed retries cover slow first-frame decodes
     setTimeout(kick, 80);
     setTimeout(kick, 220);
+    setTimeout(kick, 500);
   }
-  // neighbours: just let preload="auto" buffer them in the background (no play/pause priming)
+  // neighbours: preload="auto" buffers them in the background
 
   v.addEventListener("error", ()=>{
     slideEl.classList.add("ready");
@@ -955,8 +1022,8 @@ $("pstage").addEventListener("click", e=>{
   if(Math.abs(tDX) > 8 || Math.abs(tDY) > 8) return;
   const v = $("pslideCur").querySelector("video");
   if(!v) return;
-  if(v.paused){ v.play().catch(()=>{}); showTap("&#9654;"); }
-  else { v.pause(); showTap("&#10073;&#10073;"); }
+  if(v.paused){ userPaused = false; v.play().catch(()=>{}); showTap("&#9654;"); }
+  else { userPaused = true; v.pause(); showTap("&#10073;&#10073;"); }
 });
 function showTap(glyph){
   const el = $("tapIcon");
@@ -978,16 +1045,19 @@ window.addEventListener("resize", ()=>{
 
 /* ════════════ tutorial (once per session) ════════════ */
 const TUT_SLIDES = [
+  { h:"Turn your phone sideways", p:"The Util Book works best in landscape — flip your phone for the clearest view of each lineup." },
   { h:"Swipe right to exit", p:"When you're watching a lineup, swipe right to jump back to the list." },
   { h:"Swipe up & down", p:"Flick up for the next lineup, down for the previous — it flows from one section into the next." },
   { h:"Enjoy the Util Book", p:"That's it. Pick a map, pick a side, and go find your nades." },
 ];
 let tutIndex = 0;
+let weewooTimer = null;
 
 function showTutorial(){
   tutIndex = 0;
   renderTut();
   $("tut").classList.add("show");
+  document.body.style.overflow = "hidden";   // lock vertical scroll behind the tutorial
 }
 function renderTut(){
   $("tutText").innerHTML = `<h3>${TUT_SLIDES[tutIndex].h}</h3><p>${TUT_SLIDES[tutIndex].p}</p>`;
@@ -996,17 +1066,79 @@ function renderTut(){
   });
   $("tutDots").innerHTML = TUT_SLIDES.map((_,i)=>`<span class="d${i===tutIndex?" on":""}"></span>`).join("");
   $("tutNext").textContent = tutIndex === TUT_SLIDES.length-1 ? "Start" : "Next";
+  // run WEE/WOO only on the last (GIF) slide
+  if(tutIndex === TUT_SLIDES.length-1){ startWeeWoo(); } else { stopWeeWoo(); }
 }
-function closeTutorial(){
-  $("tut").classList.remove("show");
-  try{ sessionStorage.setItem("ub_tut_seen","1"); }catch(_){}
-}
-$("tutNext").addEventListener("click", ()=>{
+function nextTut(){
   if(tutIndex < TUT_SLIDES.length-1){ tutIndex++; renderTut(); }
   else { closeTutorial(); }
-});
+}
+function prevTut(){
+  if(tutIndex > 0){ tutIndex--; renderTut(); }
+}
+function closeTutorial(){
+  stopWeeWoo();
+  $("tut").classList.remove("show");
+  document.body.style.overflow = "";
+  try{ sessionStorage.setItem("ub_tut_seen","1"); }catch(_){}
+}
+
+/* WEE / WOO: one visible at a time, swap every 0.3s, toggle white<->red each time */
+function startWeeWoo(){
+  stopWeeWoo();
+  const left = $("wwLeft"), right = $("wwRight");
+  let showLeft = true;       // which side is visible this tick
+  let leftRed = true, rightRed = false;  // colour state per side
+  const tick = ()=>{
+    left.classList.remove("show","red","white");
+    right.classList.remove("show","red","white");
+    if(showLeft){
+      left.classList.add("show", leftRed ? "red" : "white");
+      leftRed = !leftRed;    // flip colour for next time this side shows
+    } else {
+      right.classList.add("show", rightRed ? "red" : "white");
+      rightRed = !rightRed;
+    }
+    showLeft = !showLeft;
+  };
+  tick();
+  weewooTimer = setInterval(tick, 300);
+}
+function stopWeeWoo(){
+  if(weewooTimer){ clearInterval(weewooTimer); weewooTimer = null; }
+  const left = $("wwLeft"), right = $("wwRight");
+  if(left) left.classList.remove("show","red","white");
+  if(right) right.classList.remove("show","red","white");
+}
+
+$("tutNext").addEventListener("click", nextTut);
 $("tutSkip").addEventListener("click", closeTutorial);
 $("tut").addEventListener("click", e=>{ if(e.target === $("tut")) closeTutorial(); });
+
+/* swipe within the tutorial: left = next slide, right = previous slide */
+let tutSX=0, tutSY=0, tutTrack=false, tutAxis=null, tutDX=0, tutDY=0;
+const tutStage = $("tutStage");
+const tutTouchTarget = $("tut");
+tutTouchTarget.addEventListener("touchstart", e=>{
+  const t=e.touches[0]; tutSX=t.clientX; tutSY=t.clientY; tutDX=0; tutDY=0; tutTrack=true; tutAxis=null;
+}, {passive:true});
+tutTouchTarget.addEventListener("touchmove", e=>{
+  if(!tutTrack) return;
+  const t=e.touches[0]; tutDX=t.clientX-tutSX; tutDY=t.clientY-tutSY;
+  if(!tutAxis && (Math.abs(tutDX)>10 || Math.abs(tutDY)>10)){
+    tutAxis = Math.abs(tutDX)>Math.abs(tutDY) ? "x" : "y";
+  }
+  if(tutAxis==="x") e.preventDefault();   // horizontal handled by us; vertical is locked anyway
+}, {passive:false});
+tutTouchTarget.addEventListener("touchend", ()=>{
+  if(!tutTrack) return;
+  tutTrack=false;
+  if(tutAxis==="x"){
+    if(tutDX < -60){ nextTut(); }       // swipe left → next
+    else if(tutDX > 60){ prevTut(); }   // swipe right → previous
+  }
+  tutAxis=null;
+});
 
 function maybeShowTutorial(){
   let seen = false;
